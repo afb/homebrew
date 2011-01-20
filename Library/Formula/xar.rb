@@ -5,12 +5,14 @@ class Xar < Formula
   homepage 'http://code.google.com/p/xar/'
   md5 '8eabb055d3387b8edc30ecfb08d2e80d'
 
+  keg_only :provided_by_osx
+
   def patches
     DATA
   end
 
   def install
-    system "./configure", "--prefix=#{prefix}", "--disable-debug", "--disable-dependency-tracking"
+    system "./configure", "--prefix=#{prefix}", "--mandir=#{man}", "--disable-debug", "--disable-dependency-tracking"
     system "make"
     system "make install"
   end
