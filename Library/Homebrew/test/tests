@@ -16,3 +16,4 @@
 /usr/bin/ruby test_ENV.rb $*
 /usr/bin/ruby test_updater.rb $*
 /usr/bin/ruby test_string.rb $*
+/usr/bin/ruby test_base32.rb $*
