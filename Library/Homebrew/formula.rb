@@ -576,6 +576,9 @@ private
   end
 
   CHECKSUM_TYPES=[:md5, :sha1, :sha256].freeze
+  CHECKSUM_BASE16LEN={:md5=>32, :sha1=>40, :sha256=>64} # Base-16
+  CHECKSUM_BASE32LEN={:md5=>26, :sha1=>32, :sha256=>52} # Base-32
+  CHECKSUM_BASE64LEN={:md5=>22, :sha1=>27, :sha256=>43} # Base-64
 
   public
   # For brew-fetch and others.
@@ -617,9 +620,11 @@ private
     else
       supplied, type = args
     end
-
+    base = 32 if supplied and supplied.length == CHECKSUM_BASE32LEN[type]
+    base = 64 if supplied and supplied.length == CHECKSUM_BASE64LEN[type]
+    base ||= 16 # hex
     hasher = Digest.const_get(type)
-    hash = fn.incremental_hash(hasher)
+    hash = fn.incremental_hash(hasher, base)
 
     if supplied and not supplied.empty?
       message = <<-EOF

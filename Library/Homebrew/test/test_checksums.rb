@@ -65,4 +65,20 @@ class ChecksumTests < Test::Unit::TestCase
     
     bad_checksum invalid_sha256
   end
+
+  def test_sha256_base32
+    valid_sha256 = Class.new(TestBall) do
+      @sha256='PIVLUH3K7DQARLI8OVHLSGA0EPHIV8TI8HHTD38VDBU5NPRG4JS0'
+    end
+    
+    good_checksum valid_sha256
+  end
+
+  def test_sha256_base64
+    valid_sha256 = Class.new(TestBall) do
+      @sha256='zL9fRHQ7dK3WSMfjXkFAdmMvo7JEY9aNH2r8W+dwJPg'
+    end
+    
+    good_checksum valid_sha256
+  end
 end

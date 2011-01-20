@@ -186,14 +186,22 @@ class Pathname
     nil
   end
   
-  def incremental_hash(hasher)
+  def incremental_hash(hasher, base=16)
     incr_hash = hasher.new
     self.open('r') do |f|
       while(buf = f.read(1024))
         incr_hash << buf
       end
     end
-    incr_hash.hexdigest
+    if base == 16
+       incr_hash.hexdigest
+    elsif base == 32
+       require 'base32'
+       Base32.encode32hex(incr_hash.digest).gsub('=', '')
+    elsif base == 64
+       require 'base64'
+       Base64.encode64(incr_hash.digest).gsub('=', '').chomp
+    end
   end
 
   def md5
