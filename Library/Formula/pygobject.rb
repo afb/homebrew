@@ -1,9 +1,9 @@
 require 'formula'
 
 class Pygobject <Formula
-  url 'http://ftp.gnome.org/pub/GNOME/sources/pygobject/2.26/pygobject-2.26.0.tar.bz2'
+  url 'http://ftp.gnome.org/pub/GNOME/sources/pygobject/2.28/pygobject-2.28.0.tar.bz2'
   homepage 'http://pygtk.org'
-  sha256 '5554acff9c27b647144143b0459359864e4a6f2ff62c7ba21cf310ad755cf7c7'
+  sha256 '12b3c6516c803e3cada4585bd45456897c8e02a7b390dfd05683b93c50ec66ba'
 
   depends_on 'pkg-config' => :build
   depends_on 'glib'
