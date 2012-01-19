@@ -1,9 +1,9 @@
 require 'formula'
 
 class Pygtk <Formula
-  url 'http://ftp.gnome.org/pub/GNOME/sources/pygtk/2.22/pygtk-2.22.0.tar.bz2'
+  url 'http://ftp.gnome.org/pub/GNOME/sources/pygtk/2.24/pygtk-2.24.0.tar.bz2'
   homepage 'http://pygtk.org'
-  sha256 '4acf0ef2bde8574913c40ee4a43d9c4f43bb77b577b67147271b534501a54cc8'
+  sha256 'cd1c1ea265bd63ff669e92a2d3c2a88eb26bcd9e5363e0f82c896e649f206912'
 
   depends_on 'pkg-config' => :build
   depends_on 'gtk+'
