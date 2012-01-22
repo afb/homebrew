@@ -13,7 +13,7 @@ module Base32
 	  end
 	end
   end
-  
+
   HEX = '[0-9A-V]'
   def decode32hex(str)
 	str.gsub(/\G\s*(#{HEX}{8}|#{HEX}{7}=|#{HEX}{5}={3}|#{HEX}{4}={4}|#{HEX}{2}={6}|(\S))/imno) do
