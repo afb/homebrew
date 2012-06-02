@@ -1,15 +1,14 @@
 require 'formula'
 
 class RpmDownloadStrategy < CurlDownloadStrategy
-  attr_reader :tarball_name
-  def initialize url, name, version, specs
-    super
-    @tarball_name="#{name}-#{version}.tar.gz"
-  end
   def stage
-    safe_system "rpm2cpio <#{@tarball_path} | cpio -vi #{@tarball_name}"
-    safe_system "tar -xzf #{@tarball_name} && rm #{@tarball_name}"
+    safe_system "rpm2cpio <#{@tarball_path} | cpio -dvim"
+    safe_system "tar -xzf #{@unique_token}*gz"
     chdir
+  end
+
+  def ext
+    ".src.rpm"
   end
 end
 
@@ -35,6 +34,10 @@ class Rpm < Formula
   # nested functions are not std C
   def patches
     DATA
+  end
+
+  fails_with :clang do
+    build 318
   end
 
   def install
