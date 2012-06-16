@@ -11,8 +11,6 @@ class Rpm < Formula
   version '5.4.9'
 
   depends_on 'db'
-  depends_on 'nss'
-  depends_on 'nspr'
   depends_on 'libmagic'
   depends_on 'popt'
   depends_on 'beecrypt'
@@ -29,16 +27,17 @@ class Rpm < Formula
   end
 
   def install
-    ENV.append 'CFLAGS', "-O0 -g"
+    ENV.append 'CFLAGS', "-g"
     args = %W[
         --prefix=#{prefix}
+        --with-path-cfg=#{etc}/rpm
         --disable-openmp
         --disable-nls
         --disable-dependency-tracking
         --without-apidocs 
     ]
     
-    system 'glibtoolize -f' # needs updated ltmain.sh
+    system 'glibtoolize -if' # needs updated ltmain.sh
     system "./configure", *args
     system "make"
     system "make install"
