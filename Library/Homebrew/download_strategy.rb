@@ -562,21 +562,6 @@ class FossilDownloadStrategy < AbstractDownloadStrategy
   end
 end
 
-class RpmDownloadStrategy < CurlDownloadStrategy
-  attr_reader :inner_tarball
-
-  def initialize url, name, version, specs
-      super
-      @inner_tarball = "#{name}-#{version}.tar.gz"
-  end
-
-  def stage
-    safe_system "rpm2cpio <#{@tarball_path} | cpio -dvim"
-    safe_system "tar -xzf #{@inner_tarball}"
-    chdir
-  end
-end
-
 def detect_download_strategy url
   case url
     # We use a special URL pattern for cvs

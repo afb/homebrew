@@ -4,11 +4,22 @@
 #
 require 'formula'
 
+class RpmDownloadStrategy < CurlDownloadStrategy
+  def stage
+    if @tarball_path.end_with? ".src.rpm" then
+        safe_system "rpm2cpio <#{@tarball_path} | cpio -dvim"
+        safe_system "tar -xzf #{@name}-*gz"
+        chdir
+    else
+        super
+    end
+  end
+end
+
 class Rpm < Formula
   url 'http://rpm5.org/files/rpm/rpm-5.4/rpm-5.4.9-0.20120508.src.rpm'
   homepage 'http://www.rpm5.org/'
   md5 '60d56ace884340c1b3fcac6a1d58e768'
-  version '5.4.9'
 
   depends_on 'db'
   depends_on 'libmagic'
