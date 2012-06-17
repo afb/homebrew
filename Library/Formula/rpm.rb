@@ -1,24 +1,23 @@
-#
-# Ports File:
-# https://trac.macports.org/browser/trunk/dports/sysutils/rpm54/Portfile
-#
 require 'formula'
 
 class RpmDownloadStrategy < CurlDownloadStrategy
+  attr_reader :tarball_name
+  def initialize url, name, version, specs
+    super
+    @tarball_name="#{name}-#{version}.tar.gz"
+  end
   def stage
-    if @tarball_path.end_with? ".src.rpm" then
-        safe_system "rpm2cpio <#{@tarball_path} | cpio -dvim"
-        safe_system "tar -xzf #{@name}-*gz"
-        chdir
-    else
-        super
-    end
+    safe_system "rpm2cpio <#{@tarball_path} | cpio -vi #{@tarball_name}"
+    safe_system "tar -xzf #{@tarball_name} && rm #{@tarball_name}"
+    chdir
   end
 end
 
 class Rpm < Formula
-  url 'http://rpm5.org/files/rpm/rpm-5.4/rpm-5.4.9-0.20120508.src.rpm'
   homepage 'http://www.rpm5.org/'
+  url 'http://rpm5.org/files/rpm/rpm-5.4/rpm-5.4.9-0.20120508.src.rpm',
+      :using => RpmDownloadStrategy
+  version '5.4.9'
   md5 '60d56ace884340c1b3fcac6a1d58e768'
 
   depends_on 'db'
@@ -45,9 +44,9 @@ class Rpm < Formula
         --disable-openmp
         --disable-nls
         --disable-dependency-tracking
-        --without-apidocs 
+        --without-apidocs
     ]
-    
+
     system 'glibtoolize -if' # needs updated ltmain.sh
     system "./configure", *args
     system "make"
