@@ -29,8 +29,8 @@ class Rpm < Formula
   depends_on 'xz'
   depends_on 'ossp-uuid'
   depends_on 'pcre'
-  depends_on 'rpm2cpio'
-  depends_on 'libtool'
+  depends_on 'rpm2cpio' => :build
+  depends_on 'libtool' => :build
 
   fails_with :clang do
     build 318
