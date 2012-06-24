@@ -37,7 +37,6 @@ class Rpm < Formula
   end
 
   def install
-    ENV.append 'CFLAGS', "-g"
     args = %W[
         --prefix=#{prefix}
         --with-path-cfg=#{etc}/rpm
