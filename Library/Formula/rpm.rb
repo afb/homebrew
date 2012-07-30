@@ -15,10 +15,10 @@ end
 
 class Rpm < Formula
   homepage 'http://www.rpm5.org/'
-  url 'http://rpm5.org/files/rpm/rpm-5.4/rpm-5.4.9-0.20120508.src.rpm',
+  url 'http://rpm5.org/files/rpm/rpm-5.4/rpm-5.4.10-0.20120706.src.rpm',
       :using => RpmDownloadStrategy
-  version '5.4.9'
-  md5 '60d56ace884340c1b3fcac6a1d58e768'
+  version '5.4.10'
+  md5 'c57fc2bc1c4cabff5706e9f9cd04234a'
 
   depends_on 'db'
   depends_on 'libmagic'
