@@ -9,16 +9,16 @@ require 'base32'
 class Base32Tests < Test::Unit::TestCase
 
   BASE16 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
-  BASE32 = 'SEOC8GKOVGE196NRUJ49IRTP4GJQSGF4CIDP6J54IMCHMU2IN1AG===='
+  BASE32 = '4OYMIQUY7QOBJGX36TEJS35ZEQT24QPEMSNZGTFESWMRW6CSXBKQ===='
 
-  def test_encode32hex
+  def test_encode32
     binary = BASE16.gsub(/../) { |match| match.hex.chr }
-    assert Base32.encode32hex(binary) == BASE32
+    assert Base32.encode(binary) == BASE32
   end
 
-  def test_decode32hex
+  def test_decode32
     binary = BASE16.gsub(/../) { |match| match.hex.chr }
-    assert Base32.decode32hex(BASE32) == binary
+    assert Base32.decode(BASE32) == binary
   end
 
 end

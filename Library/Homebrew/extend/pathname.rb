@@ -197,7 +197,7 @@ class Pathname
        incr_hash.hexdigest
     elsif base == 32
        require 'base32'
-       Base32.encode32hex(incr_hash.digest).gsub('=', '')
+       Base32.encode(incr_hash.digest).gsub('=', '')
     elsif base == 64
        require 'base64'
        Base64.encode64(incr_hash.digest).gsub('=', '').chomp

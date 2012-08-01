@@ -1,25 +1,43 @@
 module Base32
-  module_function
+  TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
 
-  def encode32hex(str)
-	str.gsub(/\G(.{5})|(.{1,4}\z)/mn) do
-	  full = $1; frag = $2
-	  n, c = (full || frag.ljust(5, "\0")).unpack("NC")
-	  full = ((n << 8) | c).to_s(32).upcase.rjust(8, "0")
-	  if frag
-		full[0, (frag.length*8+4).div(5)].ljust(8, "=")
-	  else
-		full
-	  end
-	end
+  class Chunk
+    def initialize(bytes)
+      @bytes = bytes
+    end
+
+    def decode
+      bytes = @bytes.take_while {|c| c != 61} # strip padding
+      n = (bytes.length * 5.0 / 8.0).floor
+      p = bytes.length < 8 ? 5 - (n * 8) % 5 : 0
+      c = bytes.inject(0) {|m,o| (m << 5) + TABLE.index(o.chr)} >> p
+      (0..n-1).to_a.reverse.collect {|i| ((c >> i * 8) & 0xff).chr}
+    end
+
+    def encode
+      n = (@bytes.length * 8.0 / 5.0).ceil
+      p = n < 8 ? 5 - (@bytes.length * 8) % 5 : 0
+      c = @bytes.inject(0) {|m,o| (m << 8) + o} << p
+      [(0..n-1).to_a.reverse.collect {|i| TABLE[(c >> i * 5) & 0x1f].chr},
+       ("=" * (8-n))]
+    end
   end
 
-  HEX = '[0-9A-V]'
-  def decode32hex(str)
-	str.gsub(/\G\s*(#{HEX}{8}|#{HEX}{7}=|#{HEX}{5}={3}|#{HEX}{4}={4}|#{HEX}{2}={6}|(\S))/imno) do
-	  raise "invalid base32" if $2
-	  s = $1
-	  s.tr("=", "0").downcase.to_i(32).divmod(256).pack("NC")[0, (s.count("^=")*5).div(8)]
-	end
+  def self.chunks(str, size)
+    result = []
+    bytes = str.bytes
+    while bytes.any? do
+      result << Chunk.new(bytes.take(size))
+      bytes = bytes.drop(size)
+    end
+    result
+  end
+
+  def self.encode(str)
+    chunks(str, 5).collect(&:encode).flatten.join
+  end
+
+  def self.decode(str)
+    chunks(str, 8).collect(&:decode).flatten.join
   end
 end
