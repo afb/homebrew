@@ -17,7 +17,7 @@ class Rpm < Formula
   url 'http://rpm5.org/files/rpm/rpm-5.4/rpm-5.4.10-0.20120706.src.rpm',
       :using => RpmDownloadStrategy
   version '5.4.10'
-  md5 'c57fc2bc1c4cabff5706e9f9cd04234a'
+  sha1 '20e5cc7e29ff45b6c5378dbe8ae4af4d1b217971'
 
   depends_on 'db'
   depends_on 'libmagic'
