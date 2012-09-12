@@ -11,6 +11,7 @@ class Rpm < Formula
   depends_on 'popt'
   depends_on 'lua'
   depends_on 'berkeley-db'
+  depends_on 'xz'
 
   # setprogname conflicts with setprogname(3), weak_alias not supported
   def patches
