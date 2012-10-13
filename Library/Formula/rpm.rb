@@ -27,7 +27,17 @@ class Rpm < Formula
     # pkg-config support was removed from lua 5.2:
     ENV['LUA_CFLAGS'] = "-I#{HOMEBREW_PREFIX}/include"
     ENV['LUA_LIBS'] = "-L#{HOMEBREW_PREFIX}/lib -llua"
-    system "./configure", "--disable-dependency-tracking", "--prefix=#{prefix}", "--with-lua", "--with-external-db", "--sysconfdir=#{HOMEBREW_PREFIX}/etc", "--without-hackingdocs", "--enable-python", "--localstatedir=#{HOMEBREW_PREFIX}/var"
+    args = %W[
+      --disable-dependency-tracking
+      --prefix=#{prefix}
+      --sysconfdir=#{HOMEBREW_PREFIX}/etc
+      --localstatedir=#{HOMEBREW_PREFIX}/var
+      --with-external-db
+      --with-lua
+      --without-hackingdocs
+      --enable-python
+    ]
+    system './configure', *args
     system "make"
     system "make install"
     # the default install makes /usr/bin/rpmquery a symlink to /bin/rpm
