@@ -2,8 +2,8 @@ require 'formula'
 
 class Rpm < Formula
   homepage 'http://www.rpm.org/'
-  url 'http://rpm.org/releases/rpm-4.10.x/rpm-4.10.0.tar.bz2'
-  sha1 'd78f19194066c3895f91f58dc84e3aad69f0b02c'
+  url 'http://rpm.org/releases/rpm-4.10.x/rpm-4.10.1.tar.bz2'
+  sha1 '3881f0f0fb686405517bfa367c49d36a0cc7a2c3'
 
   depends_on 'nss'
   depends_on 'nspr'
