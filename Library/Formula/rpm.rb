@@ -5,6 +5,7 @@ class Rpm < Formula
   url 'http://rpm.org/releases/rpm-4.10.x/rpm-4.10.1.tar.bz2'
   sha1 '3881f0f0fb686405517bfa367c49d36a0cc7a2c3'
 
+  depends_on 'pkg-config' => :build
   depends_on 'nss'
   depends_on 'nspr'
   depends_on 'libmagic'
