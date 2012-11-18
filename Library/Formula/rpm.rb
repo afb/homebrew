@@ -1,9 +1,14 @@
 require 'formula'
 
 class RpmDownloadStrategy < CurlDownloadStrategy
+  attr_reader :tarball_name
+  def initialize url, name, version, specs
+    super
+    @tarball_name="#{name}-#{version}.tar.gz"
+  end
   def stage
-    safe_system "rpm2cpio <#{@tarball_path} | cpio -dvim"
-    safe_system "tar -xzf #{@unique_token}*gz"
+    safe_system "rpm2cpio <#{@tarball_path} | cpio -vi #{@tarball_name}"
+    safe_system "tar -xzf #{@tarball_name} && rm #{@tarball_name}"
     chdir
   end
 
