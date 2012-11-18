@@ -17,7 +17,7 @@ class Rpm < Formula
   url 'http://rpm5.org/files/rpm/rpm-5.4/rpm-5.4.10-0.20120706.src.rpm',
       :using => RpmDownloadStrategy
   version '5.4.10'
-  sha1 '20e5cc7e29ff45b6c5378dbe8ae4af4d1b217971'
+  sha1 'ce43b5871c4f884bea679f6c37d5cb9df7f2e520'
 
   depends_on 'db'
   depends_on 'libmagic'
@@ -34,10 +34,6 @@ class Rpm < Formula
   # nested functions are not std C
   def patches
     DATA
-  end
-
-  fails_with :clang do
-    build 318
   end
 
   def install
