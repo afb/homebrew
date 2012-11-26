@@ -2,9 +2,9 @@ require 'formula'
 
 class RpmDownloadStrategy < CurlDownloadStrategy
   attr_reader :tarball_name
-  def initialize url, name, version, specs
+  def initialize name, package
     super
-    @tarball_name="#{name}-#{version}.tar.gz"
+    @tarball_name="#{name}-#{package.version}.tar.gz"
   end
   def stage
     safe_system "rpm2cpio <#{@tarball_path} | cpio -vi #{@tarball_name}"
