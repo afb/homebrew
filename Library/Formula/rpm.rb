@@ -7,8 +7,8 @@ class RpmDownloadStrategy < CurlDownloadStrategy
     @tarball_name="#{name}-#{package.version}.tar.gz"
   end
   def stage
-    safe_system "rpm2cpio <#{@tarball_path} | cpio -vi #{@tarball_name}"
-    safe_system "tar -xzf #{@tarball_name} && rm #{@tarball_name}"
+    safe_system "rpm2cpio.pl <#{@tarball_path} | cpio -vi #{@tarball_name}"
+    safe_system "/usr/bin/tar -xzf #{@tarball_name} && rm #{@tarball_name}"
     chdir
   end
 
@@ -55,9 +55,6 @@ class Rpm < Formula
     system "./configure", *args
     system "make"
     system "make install"
-
-    # conflicts with rpm2cpio package - which is required for downloading
-    system "/bin/rm", "-f", "#{bin}/rpm2cpio"
   end
 end
 
