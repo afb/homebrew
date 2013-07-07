@@ -40,12 +40,16 @@ class Rpm < Formula
 
   # nested functions are not std C
   def patches
-    'http://rpm5.org/cvs/patchset?cn=16840'
+    [
+      'http://rpm5.org/cvs/patchset?cn=16840',
+      DATA
+    ]
   end
 
   def install
     args = %W[
         --prefix=#{prefix}
+        --localstatedir=#{var}
         --with-path-cfg=#{etc}/rpm
         --disable-openmp
         --disable-nls
@@ -57,6 +61,7 @@ class Rpm < Formula
         --with-lua
         --with-syck
         --without-apidocs
+        varprefix=#{var}
     ]
 
     system 'glibtoolize -if' # needs updated ltmain.sh
@@ -64,4 +69,55 @@ class Rpm < Formula
     system "make"
     system "make install"
   end
+
+  def spec
+    <<-EOS.undent
+      Summary:   Test package
+      Name:      test
+      Version:   1.0
+      Release:   1
+      License:   Public Domain
+      Group:     Development/Tools
+      BuildArch: noarch
+
+      %description
+      Trivial test package
+
+      %prep
+      %build
+      %install
+
+      %files
+
+      %changelog
+
+    EOS
+  end
+
+  def rpmdir macro
+    return Pathname.new(`#{bin}/rpm --eval #{macro}`.chomp)
+  end
+
+  def test
+    system "#{bin}/rpm", "--version"
+    rpmdir('%_builddir').mkpath
+    specfile = rpmdir('%_specdir')+'test.spec'
+    specfile.unlink if specfile.exist?
+    (specfile).write(spec)
+    system "#{bin}/rpmbuild", "-ba", specfile
+  end
 end
+
+__END__
+diff -ur rpm-5.4.8.orig/macros/macros.in rpm-5.4.8/macros/macros.in
+--- rpm-5.4.8.orig/macros/macros.in	2012-03-21 19:04:06.000000000 -0500
++++ rpm-5.4.8/macros/macros.in	2012-06-07 17:02:53.903046624 -0500
+@@ -985,7 +985,7 @@
+ 
+ #==============================================================================
+ # ---- rpmbuild macros.
+-#%%{load:%{_usrlibrpm}/macros.rpmbuild}
++%{load:%{_usrlibrpm}/macros.rpmbuild}
+ 
+ #------------------------------------------------------------------------
+ # cmake(...) configuration
