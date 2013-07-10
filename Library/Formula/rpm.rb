@@ -20,10 +20,10 @@ end
 
 class Rpm < Formula
   homepage 'http://www.rpm5.org/'
-  url 'http://rpm5.org/files/rpm/rpm-5.4/rpm-5.4.10-0.20120706.src.rpm',
+  url 'http://rpm5.org/files/rpm/rpm-5.4/rpm-5.4.11-0.20130708.src.rpm',
       :using => RpmDownloadStrategy, :name => 'rpm'
-  version '5.4.10'
-  sha1 'ce43b5871c4f884bea679f6c37d5cb9df7f2e520'
+  version '5.4.11'
+  sha1 'a40328cf49f43d33746c503a390e3955f5bd3680'
 
   depends_on 'berkeley-db'
   depends_on 'libmagic'
@@ -36,14 +36,10 @@ class Rpm < Formula
   depends_on 'ossp-uuid'
   depends_on 'pcre'
   depends_on 'rpm2cpio' => :build
-  depends_on 'libtool' => :build
 
   # nested functions are not std C
   def patches
-    [
-      'http://rpm5.org/cvs/patchset?cn=16840',
-      DATA
-    ]
+    DATA
   end
 
   def install
@@ -54,17 +50,20 @@ class Rpm < Formula
         --disable-openmp
         --disable-nls
         --disable-dependency-tracking
-        --with-libtasn1
-        --with-neon
-        --with-uuid
-        --with-pcre
-        --with-lua
-        --with-syck
+        --with-db=external
+        --with-file=external
+        --with-popt=external
+        --with-beecrypt=external
+        --with-libtasn1=external
+        --with-neon=external
+        --with-uuid=external
+        --with-pcre=external
+        --with-lua=internal
+        --with-syck=internal
         --without-apidocs
         varprefix=#{var}
     ]
 
-    system 'glibtoolize -if' # needs updated ltmain.sh
     system "./configure", *args
     system "make"
     system "make install"
