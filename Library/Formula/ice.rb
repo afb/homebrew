@@ -8,7 +8,7 @@ class Ice < Formula
   option 'doc', 'Install documentation'
   option 'demo', 'Build demos'
 
-  depends_on 'berkeley-db'
+  depends_on 'berkeley-db5'
   depends_on 'mcpp'
 
   def patches
