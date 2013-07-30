@@ -20,12 +20,12 @@ end
 
 class Rpm < Formula
   homepage 'http://www.rpm5.org/'
-  url 'http://rpm5.org/files/rpm/rpm-5.4/rpm-5.4.11-0.20130708.src.rpm',
+  url 'http://rpm5.org/files/rpm/rpm-5.4/rpm-5.4.12-0.20130725.src.rpm',
       :using => RpmDownloadStrategy, :name => 'rpm'
-  version '5.4.11'
-  sha1 'a40328cf49f43d33746c503a390e3955f5bd3680'
+  version '5.4.12'
+  sha1 'daa07a637e75c12446ea5c035e7350393199ba59'
 
-  depends_on 'berkeley-db'
+  depends_on 'berkeley-db' # needs >= 6.0
   depends_on 'libmagic'
   depends_on 'popt'
   depends_on 'beecrypt'
