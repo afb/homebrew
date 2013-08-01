@@ -2,8 +2,8 @@ require 'formula'
 
 class Rpm < Formula
   homepage 'http://www.rpm.org/'
-  url 'http://rpm.org/releases/rpm-4.11.x/rpm-4.11.0.1.tar.bz2'
-  sha1 '4f4362c40136c3a59ce164c142d62ea081793379'
+  url 'http://rpm.org/releases/rpm-4.11.x/rpm-4.11.1.tar.bz2'
+  sha1 '31ddc4185137ce3f718c99e91dcb040614fe820c'
 
   depends_on 'pkg-config' => :build
   depends_on 'nss'
@@ -43,6 +43,38 @@ class Rpm < Formula
     # by using ../.. but that doesn't really work with any other prefix.
     ln_sf "rpm", "#{bin}/rpmquery"
     ln_sf "rpm", "#{bin}/rpmverify"
+  end
+
+  def spec
+    <<-EOS.undent
+      Summary:   Test package
+      Name:      test
+      Version:   1.0
+      Release:   1
+      License:   Public Domain
+      Group:     Development/Tools
+      BuildArch: noarch
+
+      %description
+      Trivial test package
+
+      %prep
+      %build
+      %install
+
+      %files
+
+      %changelog
+
+    EOS
+  end
+
+  def test
+    system "#{bin}/rpm", "--version"
+    specfile = Pathname.new(File.expand_path('~/rpmbuild/SPECS/test.spec'))
+    specfile.unlink if specfile.exist?
+    (specfile).write(spec)
+    system "#{bin}/rpmbuild", "-ba", specfile
   end
 end
 
