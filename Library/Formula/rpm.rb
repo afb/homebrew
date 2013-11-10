@@ -45,8 +45,9 @@ class Rpm < Formula
         --prefix=#{prefix}
         --localstatedir=#{var}
         --with-path-cfg=#{etc}/rpm
-        --with-path-magic=#{share}/misc/magic
+        --with-path-magic=#{HOMEBREW_PREFIX}/share/misc/magic
         --with-extra-path-macros=#{lib}/rpm/macros.*
+        --with-libiconv-prefix=/usr
         --disable-openmp
         --disable-nls
         --disable-dependency-tracking
