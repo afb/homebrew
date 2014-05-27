@@ -24,8 +24,8 @@ end
 
 class Zeroinstall < Formula
   homepage "http://0install.net/injector.html"
-  url "https://downloads.sf.net/project/zero-install/0install/2.6.2/0install-2.6.2.tar.bz2"
-  sha1 "93c6b61390b383e5fc103c64ca4419d1fbd17af4"
+  url "https://downloads.sf.net/project/zero-install/0install/2.7/0install-2.7.tar.bz2"
+  sha1 "6a36acfb32bb178a63b7e28517a727e22f95dd74"
 
   depends_on GnupgRequirement
   depends_on :x11 => :optional
@@ -38,13 +38,6 @@ class Zeroinstall < Formula
   head do
     url "https://github.com/0install/0install"
     depends_on "gettext" => :build
-  end
-
-  # Fixes installation if /var is a symlink.
-  # Cherry picked from upstream commit.
-  patch do
-    url "https://github.com/0install/0install/commit/8da5a1f82c108903dfea74553df0779f9f9e6d14.diff"
-    sha1 "5ab8956086b765fe4e07d27cb69628c319a9c2b9"
   end
 
   def install
