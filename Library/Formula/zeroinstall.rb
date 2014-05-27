@@ -27,10 +27,10 @@ class Zeroinstall < Formula
   url "https://downloads.sf.net/project/zero-install/0install/2.7/0install-2.7.tar.bz2"
   sha1 "6a36acfb32bb178a63b7e28517a727e22f95dd74"
 
+  option 'with-gui', "Build the 0install gui (requires GTK+)"
+
   depends_on GnupgRequirement
-  depends_on :x11 => :optional
-  depends_on "glib" if build.without? "x11"
-  depends_on "gtk+" if build.with? "x11"
+  depends_on "gtk+" if build.with? "gui"
   depends_on "pkg-config" => :build
   depends_on "objective-caml" => :build
   depends_on "opam" => :build
@@ -42,7 +42,7 @@ class Zeroinstall < Formula
 
   def install
     modules = "yojson xmlm ounit react lwt extlib ssl ocurl"
-    modules += " lablgtk" if build.with? "x11"
+    modules += " lablgtk" if build.with? "gui"
 
     # Parellel builds fail for some of these opam libs.
     ENV.deparallelize
