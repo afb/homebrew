@@ -47,9 +47,23 @@ class Zeroinstall < Formula
     # Parellel builds fail for some of these opam libs.
     ENV.deparallelize
 
+    # Store a cache outside the build directory
+    opamcurl = Pathname.pwd+'opamcurl'
+    opamcurl.write <<-EOS.undent
+      #!/bin/bash
+      url=${!#}
+      cache=#{HOMEBREW_CACHE}/zeroinstall-opam
+      dir=`pwd`
+      file=`basename $url`
+      mkdir -p $cache
+      cd $cache
+      test -f $file && echo 304 || curl "$@"
+      cp $file $dir/$file
+    EOS
+    opamcurl.chmod 0755
+
     # Set up a temp opam dir for building. Since ocaml statically links against ocaml libs, it won't be needed later.
-    # TODO: Use $OPAMCURL to store a cache outside the build directory
-    ENV["OPAMCURL"] = "curl"
+    ENV["OPAMCURL"] = opamcurl
     ENV["OPAMROOT"] = "opamroot"
     ENV["OPAMYES"] = "1"
     ENV["OPAMVERBOSE"] = "1"
