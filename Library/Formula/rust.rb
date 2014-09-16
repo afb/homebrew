@@ -2,25 +2,28 @@ require 'formula'
 
 class Rust < Formula
   homepage 'http://www.rust-lang.org/'
-  url 'http://static.rust-lang.org/dist/rust-0.6.tar.gz'
-  sha256 'e11cb529a1e20f27d99033181a9e0e131817136b46d2742f0fa1afa1210053e5'
+  url 'https://static.rust-lang.org/dist/rust-0.11.0.tar.gz'
+  sha1 'f849e16e03b474143c575503ae82da7577a2170f'
 
-  fails_with :clang do
-    build 318
-    cause "cannot initialize a parameter of type 'volatile long long *' with an rvalue of type 'int *'"
+  head 'https://github.com/rust-lang/rust.git'
+
+  bottle do
+    sha1 "80cb5b7ab75da8fdab98f56441a69a2a3e575595" => :mavericks
+    sha1 "476b4a75e28c68fec195535ed2aaf8082af9597f" => :mountain_lion
+    sha1 "e4246f7544502ac83c4485e82660ab5bcce96979" => :lion
   end
 
   def install
     args = ["--prefix=#{prefix}"]
+    args << "--disable-rpath" if build.head?
     args << "--enable-clang" if ENV.compiler == :clang
     system "./configure", *args
     system "make"
     system "make install"
   end
 
-  def test
+  test do
     system "#{bin}/rustc"
-    system "#{bin}/rustdoc"
-    system "#{bin}/cargo"
+    system "#{bin}/rustdoc", "-h"
   end
 end

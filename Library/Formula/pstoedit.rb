@@ -2,13 +2,15 @@ require 'formula'
 
 class Pstoedit < Formula
   homepage 'http://www.pstoedit.net'
-  url 'https://sourceforge.net/projects/pstoedit/files/pstoedit/3.61/pstoedit-3.61.tar.gz'
-  sha1 '426f3746ecb441caa0db401d5880e1ac04a399d5'
+  url 'https://downloads.sourceforge.net/project/pstoedit/pstoedit/3.62/pstoedit-3.62.tar.gz'
+  sha1 '50d5a4e2fe0e0ff2f73cb094cb945b221083e742'
+  revision 1
 
   depends_on 'pkg-config' => :build
   depends_on 'plotutils'
   depends_on 'ghostscript'
   depends_on 'imagemagick'
+  depends_on 'xz' if MacOS.version < :mavericks
 
   def install
     ENV.deparallelize

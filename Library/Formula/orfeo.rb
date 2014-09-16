@@ -2,16 +2,16 @@ require 'formula'
 
 class Orfeo < Formula
   homepage 'http://www.orfeo-toolbox.org/otb/'
-  url 'http://sourceforge.net/projects/orfeo-toolbox/files/OTB/OTB-3.14.1/OrfeoToolbox-3.14.1.tgz'
-  sha1 '2cdef44fc4119ef410f750001c18aabc6be3a48c'
+  url 'https://downloads.sourceforge.net/project/orfeo-toolbox/OTB/OTB-3.20/OTB-3.20.0.tgz'
+  sha1 '2af5b4eb857d0f1ecb1fd1107c6879f9d79dd0fc'
 
   depends_on 'cmake' => :build
+  depends_on :python => :optional
   depends_on 'fltk'
   depends_on 'gdal'
   depends_on 'qt'
 
   option 'examples', 'Compile and install various examples'
-  option 'python', 'Enable Python support'
   option 'java', 'Enable Java support'
   option 'patented', 'Enable patented algorithms'
 
@@ -25,9 +25,9 @@ class Orfeo < Formula
     ]
 
     args << '-DBUILD_EXAMPLES=' + ((build.include? 'examples') ? 'ON' : 'OFF')
-    args << '-DOTB_WRAP_PYTHON=' + ((build.include? 'python') ? 'ON' : 'OFF')
     args << '-DOTB_WRAP_JAVA=' + ((build.include? 'java') ? 'ON' : 'OFF')
     args << '-DOTB_USE_PATENTED=' + ((build.include? 'patented') ? 'ON' : 'OFF')
+    args << '-DOTB_WRAP_PYTHON=OFF' if build.without? 'python'
 
     mkdir 'build' do
       system 'cmake', '..', *args

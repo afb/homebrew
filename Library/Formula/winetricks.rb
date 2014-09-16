@@ -2,10 +2,10 @@ require 'formula'
 
 class Winetricks < ScriptFileFormula
   homepage 'http://code.google.com/p/winetricks/'
-  url 'http://winetricks.googlecode.com/svn-history/r913/trunk/src/winetricks', :using => :curl
+  url 'http://winetricks.googlecode.com/svn-history/r1199/trunk/src/winetricks', :using => :curl
   # since the version stated in the field is seldom updated, we append the revision number
-  version '20120912-r913'
-  sha256 'b7b9a53ca507cec75efbd263c5dad1aaa80f8751469a62d9e68ed44e58050d3c'
+  version '20140609-r1199'
+  sha256 '25a039e7182797d77d9c8901220a2d30da36bbd6558ade3f7a82bf3b5ee02bc8'
 
   head 'http://winetricks.googlecode.com/svn/trunk/src/winetricks', :using => :curl
 

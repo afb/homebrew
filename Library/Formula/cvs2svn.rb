@@ -3,7 +3,7 @@ require 'formula'
 class PythonWithGdbm < Requirement
   fatal true
 
-  satisfy { quiet_system "python", "-c", "import gdbm" }
+  satisfy(:build_env => false) { quiet_system "python", "-c", "import gdbm" }
 
   def message; <<-EOS.undent
     The Python being used does not include gdbm support,
@@ -18,8 +18,8 @@ end
 
 class Cvs2svn < Formula
   homepage 'http://cvs2svn.tigris.org/'
-  url 'http://trac.macports.org/export/70472/distfiles/cvs2svn/cvs2svn-2.3.0.tar.gz'
-  sha1 '545237805ddb241054ba40b105b9c29b705539b8'
+  url 'http://cvs2svn.tigris.org/files/documents/1462/49237/cvs2svn-2.4.0.tar.gz'
+  sha1 '1194ac6ec70004409eea1fb2f0fce745318f1767'
 
   depends_on PythonWithGdbm
 
@@ -28,9 +28,10 @@ class Cvs2svn < Formula
     system "make man"
     man1.install gzip('cvs2svn.1', 'cvs2git.1', 'cvs2bzr.1')
     prefix.install %w[ BUGS COMMITTERS HACKING
-      cvs2bzr-example.options cvs2git-example.options cvs2hg-example.options
-      cvs2svn-example.options contrib ]
-
+                       cvs2bzr-example.options
+                       cvs2git-example.options
+                       cvs2hg-example.options
+                       cvs2svn-example.options contrib ]
     doc.install Dir['{doc,www}/*']
   end
 

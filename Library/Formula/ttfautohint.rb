@@ -1,14 +1,18 @@
-require 'formula'
+require "formula"
 
 class Ttfautohint < Formula
-  homepage 'http://www.freetype.org/ttfautohint'
-  url 'http://download.savannah.gnu.org/releases/freetype/ttfautohint-0.92.tar.gz'
-  sha1 'c1d169cae2cf71ca39fe108815844574846113c5'
+  homepage "http://www.freetype.org/ttfautohint"
+  url "https://downloads.sourceforge.net/project/freetype/ttfautohint/1.00/ttfautohint-1.00.tar.gz"
+  sha1 "41010e67e7b42151386c12717e25b0a89ef9f99b"
 
-  depends_on :freetype
+  depends_on "pkg-config" => :build
+  depends_on "freetype"
+  depends_on "libpng"
+  depends_on "harfbuzz"
 
   def install
     system "./configure", "--disable-dependency-tracking",
+                          "--disable-silent-rules",
                           "--prefix=#{prefix}",
                           "--with-qt=no"
     system "make install"

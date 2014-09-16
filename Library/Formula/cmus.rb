@@ -1,33 +1,38 @@
-require 'formula'
+require "formula"
 
 class Cmus < Formula
-  homepage 'http://cmus.sourceforge.net/'
-  url 'http://downloads.sourceforge.net/cmus/cmus-v2.5.0.tar.bz2'
-  sha1 '244975a5ff642567acb047f6bd518e4a3271c25b'
+  homepage "https://cmus.github.io/"
+  head "https://github.com/cmus/cmus.git"
 
-  head 'https://git.gitorious.org/cmus/cmus.git'
+  bottle do
+    sha1 "584b513eda4887a001a6a4613160f1181620ba94" => :mavericks
+    sha1 "b7ff43fa726aff8d9e26f7dbf1d2c136cb416910" => :mountain_lion
+    sha1 "5b455c2550115d65edb2b1ee537b0bdbfd62384e" => :lion
+  end
 
-  depends_on 'pkg-config' => :build
-  depends_on 'libao'
-  depends_on 'mad'
-  depends_on 'libogg'
-  depends_on 'libvorbis'
-  depends_on 'faad2'
-  depends_on 'flac'
-  depends_on 'mp4v2'
-  depends_on 'libcue'
+  stable do
+    url "https://github.com/cmus/cmus/archive/v2.6.0.tar.gz"
+    sha1 "aba00eb75335532c0413f7c819c2e2d12fcd4314"
+  end
 
-  skip_clean 'bin/cmus'
-  skip_clean 'bin/cmus-remote'
+  devel do
+    url "https://github.com/cmus/cmus/archive/v2.6.0-rc0.tar.gz"
+    version "2.6.0-rc0"
+    sha1 "08f7f038d4fa14fe0e1b7dea5df137ada11401f3"
+  end
+
+  depends_on "pkg-config" => :build
+  depends_on "libao"
+  depends_on "mad"
+  depends_on "libogg"
+  depends_on "libvorbis"
+  depends_on "faad2"
+  depends_on "flac"
+  depends_on "mp4v2"
+  depends_on "libcue"
+  depends_on "ffmpeg" => :optional
 
   def install
-    # We add this to CPPFLAGS and LDFLAGS in ENV, but cmus doesn't
-    # pick up on that. Adding this patch because I am too lazy to
-    # send a patch upstream to respect CPPFLAGS - @adamv
-    unless HOMEBREW_PREFIX.to_s == '/usr/local'
-      ENV.append 'CFLAGS', "-isystem #{HOMEBREW_PREFIX}/include -L#{HOMEBREW_PREFIX}/lib"
-    end
-
     system "./configure", "prefix=#{prefix}", "mandir=#{man}"
     system "make install"
   end

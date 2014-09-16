@@ -1,9 +1,9 @@
-require 'formula'
+require "formula"
 
 class Monit < Formula
-  homepage 'http://mmonit.com/monit/'
-  url 'http://mmonit.com/monit/dist/monit-5.5.tar.gz'
-  sha256 '8276b060b3f0e6453c9748d421dec044ddae09d3e4c4666e13472aab294d7c53'
+  homepage "http://mmonit.com/monit/"
+  url "http://mmonit.com/monit/dist/monit-5.8.1.tar.gz"
+  sha1 "97c67699a4b2ee3b6ab8c51173611408e31173d7"
 
   def install
     system "./configure", "--prefix=#{prefix}",
@@ -12,7 +12,7 @@ class Monit < Formula
     system "make install"
   end
 
-  def test
+  test do
     system "#{bin}/monit", "-h"
   end
 end

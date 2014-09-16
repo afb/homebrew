@@ -2,12 +2,18 @@ require 'formula'
 
 class Mksh < Formula
   homepage 'https://mirbsd.org/mksh.htm'
-  url 'https://mirbsd.org/MirOS/dist/mir/mksh/mksh-R45.tgz'
-  version '45.1'
-  sha256 '90137336a836ad180c6e4f84065b993414aacb2e954afeac506cefb51d432cb8'
+  url 'http://mirbsd.org/MirOS/dist/mir/mksh/mksh-R50b.tgz'
+  sha1 '5554d18126eb861caa71891d6a135014b9aabb99'
+
+  bottle do
+    cellar :any
+    sha1 "b643e1c9418f9bb4f46487d4351c43aa9195f094" => :mavericks
+    sha1 "f274f48e9e8d7fc29cb4f018d733ffe43e696fb0" => :mountain_lion
+    sha1 "35c935b1912d577e04e4090b59080ba7f4cb204d" => :lion
+  end
 
   def install
-    system "sh", "./Build.sh", "-c", (ENV.compiler == :clang ? "lto" : "combine")
+    system "sh", "./Build.sh", "-r", "-c", (ENV.compiler == :clang ? "lto" : "combine")
     bin.install 'mksh'
     man1.install 'mksh.1'
   end

@@ -2,8 +2,8 @@ require 'formula'
 
 class Gsoap < Formula
   homepage 'http://www.cs.fsu.edu/~engelen/soap.html'
-  url 'http://sourceforge.net/projects/gsoap2/files/gSOAP/gsoap_2.8.14.zip'
-  sha1 '4bb2f8c0bbb3be0267aaf51a7dc76817b18c5e0a'
+  url 'https://downloads.sourceforge.net/project/gsoap2/gSOAP/gsoap_2.8.17.zip'
+  sha1 'd6c483ea2eabade138d71d005300be909be9a274'
 
   def install
     ENV.deparallelize
@@ -11,7 +11,7 @@ class Gsoap < Formula
     system 'make install'
   end
 
-  def test
+  test do
     system "#{bin}/soapcpp2", "-v"
   end
 end

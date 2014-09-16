@@ -2,14 +2,28 @@ require 'formula'
 
 class Qscintilla2 < Formula
   homepage 'http://www.riverbankcomputing.co.uk/software/qscintilla/intro'
-  url 'http://downloads.sourceforge.net/project/pyqt/QScintilla2/QScintilla-2.6.2/QScintilla-gpl-2.6.2.tar.gz'
-  sha1 '6106c9e13983c086daf1fb0dba1180abed17588c'
+  url "https://downloads.sf.net/project/pyqt/QScintilla2/QScintilla-2.8.3/QScintilla-gpl-2.8.3.tar.gz"
+  sha1 "d3b4f0dc7358591c122518d932f797ae3e3dd9d4"
 
-  depends_on 'pyqt'
-  depends_on 'sip'
+  depends_on :python => :recommended
+  depends_on :python3 => :optional
+
+  option "without-plugin", "Skip building the Qt Designer plugin"
+
+  if build.with? "python3"
+    depends_on "pyqt" => "with-python3"
+  else
+    depends_on "pyqt"
+  end
 
   def install
-    ENV.prepend 'PYTHONPATH', "#{HOMEBREW_PREFIX}/lib/#{which_python}/site-packages", ':'
+    # On Mavericks we want to target libc++, this requires a unsupported/macx-clang-libc++ flag
+    if ENV.compiler == :clang and MacOS.version >= :mavericks
+      spec = "unsupported/macx-clang-libc++"
+    else
+      spec = "macx-g++"
+    end
+    args = %W[-config release -spec #{spec}]
 
     cd 'Qt4Qt5' do
       inreplace 'qscintilla.pro' do |s|
@@ -19,28 +33,58 @@ class Qscintilla2 < Formula
         s.gsub! "$$[QT_INSTALL_DATA]", "#{prefix}/data"
       end
 
-      system "qmake", "qscintilla.pro"
+      inreplace "features/qscintilla2.prf" do |s|
+        s.gsub! '$$[QT_INSTALL_LIBS]', lib
+        s.gsub! "$$[QT_INSTALL_HEADERS]", include
+      end
+
+      system "qmake", "qscintilla.pro", *args
       system "make"
       system "make", "install"
     end
 
+    # Add qscintilla2 features search path, since it is not installed in Qt keg's mkspecs/features/
+    ENV["QMAKEFEATURES"] = "#{prefix}/data/mkspecs/features"
+
     cd 'Python' do
-      system 'python', 'configure.py', "-o", lib, "-n", include,
-                       "--apidir=#{prefix}/qsci",
-                       "--destdir=#{lib}/#{which_python}/site-packages/PyQt4",
-                       "--sipdir=#{share}/sip"
-      system 'make'
-      system 'make', 'install'
+      Language::Python.each_python(build) do |python, version|
+        (share/"sip").mkpath
+        system python, "configure.py", "-o", lib, "-n", include,
+                         "--apidir=#{prefix}/qsci",
+                         "--destdir=#{lib}/python#{version}/site-packages/PyQt4",
+                         "--qsci-sipdir=#{share}/sip",
+                         "--pyqt-sipdir=#{HOMEBREW_PREFIX}/share/sip",
+                         "--spec=#{spec}"
+        system 'make'
+        system 'make', 'install'
+        system "make", "clean"
+      end
+    end
+
+    if build.with? "plugin"
+      mkpath prefix/"plugins/designer"
+      cd "designer-Qt4Qt5" do
+        inreplace "designer.pro" do |s|
+          s.sub! "$$[QT_INSTALL_PLUGINS]", "#{prefix}/plugins"
+          s.sub! "$$[QT_INSTALL_LIBS]", "#{lib}"
+        end
+        system "qmake", "designer.pro", *args
+        system "make"
+        system "make", "install"
+      end
+      # symlink Qt Designer plugin (note: not removed on qscintilla2 formula uninstall)
+      ln_sf prefix/"plugins/designer/libqscintillaplugin.dylib",
+            Formula["qt"].opt_prefix/"plugins/designer/"
     end
   end
 
-  def caveats; <<-EOS.undent
-    For non-Homebrew Python, you need to amend your PYTHONPATH like so:
-      export PYTHONPATH=#{HOMEBREW_PREFIX}/lib/#{which_python}/site-packages:$PYTHONPATH
+  test do
+    Pathname("test.py").write <<-EOS.undent
+      import PyQt4.Qsci
+      assert("QsciLexer" in dir(PyQt4.Qsci))
     EOS
-  end
-
-  def which_python
-    "python" + `python -c 'import sys;print(sys.version[:3])'`.strip
+    Language::Python.each_python(build) do |python, version|
+      system python, "test.py"
+    end
   end
 end

@@ -1,25 +1,25 @@
 require 'formula'
 
-class XapianBindings < Formula
-  homepage 'http://xapian.org'
-  url 'http://oligarchy.co.uk/xapian/1.2.13/xapian-bindings-1.2.13.tar.gz'
-  sha1 '0cffc6ae2df295d2f8bc052831ed225e60236e92'
-end
-
 class Xapian < Formula
   homepage 'http://xapian.org'
-  url 'http://oligarchy.co.uk/xapian/1.2.13/xapian-core-1.2.13.tar.gz'
-  sha1 'ae5edc64671c5f32a3a24abf8cc3028cb56f6c6b'
+  url 'http://oligarchy.co.uk/xapian/1.2.18/xapian-core-1.2.18.tar.xz'
+  sha1 '0eb07cfec9a213a6d310ae2472ccd3cd142d2d33'
 
   option "java",   "Java bindings"
   option "php",    "PHP bindings"
-  option "python", "Python bindings"
   option "ruby",   "Ruby bindings"
+
+  depends_on :python => :optional
+
+  resource 'bindings' do
+    url 'http://oligarchy.co.uk/xapian/1.2.18/xapian-bindings-1.2.18.tar.xz'
+    sha1 'f185c5b3c34deb43b806f6c6bc0e296977b0f931'
+  end
 
   skip_clean :la
 
   def build_any_bindings?
-    build.include? 'ruby' or build.include? 'python' or build.include? 'java' or build.include? 'php'
+    build.include? 'ruby' or build.with? 'python' or build.include? 'java' or build.include? 'php'
   end
 
   def install
@@ -28,7 +28,7 @@ class Xapian < Formula
     system "make install"
     return unless build_any_bindings?
 
-    XapianBindings.new.brew do
+    resource('bindings').stage do
       args = %W[
         --disable-dependency-tracking
         --prefix=#{prefix}
@@ -51,12 +51,9 @@ class Xapian < Formula
         args << '--without-ruby'
       end
 
-      if build.include? 'python'
-        python_lib = lib/which_python/'site-packages'
-        python_lib.mkpath
-        ENV.append 'PYTHONPATH', python_lib
-        ENV['OVERRIDE_MACOSX_DEPLOYMENT_TARGET'] = '10.4'
-        ENV['PYTHON_LIB'] = python_lib
+      if build.with? 'python'
+        (lib+'python2.7/site-packages').mkpath
+        ENV['PYTHON_LIB'] = lib+'python2.7/site-packages'
         args << "--with-python"
       else
         args << "--without-python"
@@ -75,25 +72,12 @@ class Xapian < Formula
   end
 
   def caveats
-    s = ''
-    if build.include? 'python'
-      s += <<-EOS.undent
-        The Python bindings won't function until you amend your PYTHONPATH like so:
-          export PYTHONPATH=#{HOMEBREW_PREFIX}/lib/#{which_python}/site-packages:$PYTHONPATH
-
-      EOS
-    end
     if build.include? 'ruby'
-      s += <<-EOS.undent
+      <<-EOS.undent
         You may need to add the Ruby bindings to your RUBYLIB from:
           #{HOMEBREW_PREFIX}/lib/ruby/site_ruby
 
       EOS
     end
-    return s.empty? ? nil : s
-  end
-
-  def which_python
-    "python" + `python -c 'import sys;print(sys.version[:3])'`.strip
   end
 end

@@ -1,13 +1,15 @@
-require 'formula'
+require "formula"
 
 class Ninja < Formula
-  homepage 'https://github.com/martine/ninja'
-  url 'https://github.com/martine/ninja/archive/v1.1.0.tar.gz'
-  sha1 'ce37677326997c70da4fe49c1e948aba5b77317f'
+  homepage "https://martine.github.io/ninja/"
+  url "https://github.com/martine/ninja/archive/v1.5.1.tar.gz"
+  sha1 "c5a3af39f6d7ee3a30263f34091c046964d442f0"
+  head "https://github.com/martine/ninja.git"
 
   def install
-    system "./bootstrap.py"
+    system "python", "bootstrap.py"
     bin.install "ninja"
-    (prefix/'etc/bash_completion.d').install 'misc/bash-completion' => 'ninja-completion.sh'
+    bash_completion.install "misc/bash-completion" => "ninja-completion.sh"
+    zsh_completion.install "misc/zsh-completion" => "_ninja"
   end
 end

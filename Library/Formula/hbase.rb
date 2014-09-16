@@ -2,15 +2,14 @@ require 'formula'
 
 class Hbase < Formula
   homepage 'http://hbase.apache.org'
-  url 'http://www.apache.org/dyn/closer.cgi?path=hbase/hbase-0.94.6.1/hbase-0.94.6.1.tar.gz'
-  sha1 'f97a91da6b82036b9a28da2d67884c8799537e65'
+  url 'http://www.apache.org/dyn/closer.cgi?path=hbase/hbase-0.98.4/hbase-0.98.4-hadoop2-bin.tar.gz'
+  sha1 'b93c8920dcfb8da04a41d1d981a7d046b9c4fb1f'
 
   depends_on 'hadoop'
 
   def install
-    rm_f Dir["bin/*.bat"]
+    rm_f Dir["bin/*.cmd", "conf/*.cmd"]
     libexec.install %w[bin conf docs lib hbase-webapps]
-    libexec.install Dir['*.jar']
     bin.write_exec_script Dir["#{libexec}/bin/*"]
 
     inreplace "#{libexec}/conf/hbase-env.sh",

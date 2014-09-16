@@ -1,21 +1,18 @@
-require 'formula'
+require "formula"
 
 class Fping < Formula
-  homepage 'http://fping.org/'
-  url 'http://fping.org/dist/fping-3.4.tar.gz'
-  sha1 '52e13afb2e6a27ec8ec69e6e10f103c4a7a1afe7'
+  homepage "http://fping.org/"
+  url "http://fping.org/dist/fping-3.10.tar.gz"
+  sha1 "d8a1fa3ec13289d67d70102c1ef16c461a7eb505"
 
-  head 'https://github.com/schweikert/fping.git'
+  head "https://github.com/schweikert/fping.git"
 
   def install
     system "./configure", "--disable-dependency-tracking",
-                          "--prefix=#{prefix}"
+                          "--prefix=#{prefix}",
+                          "--sbindir=#{bin}",
+                          "--enable-ipv6"
     system "make install"
   end
 
-  def caveats; <<-EOS.undent
-    fping can only be run by root by default so either use sudo to run fping or
-        setuid root #{sbin}/fping
-    EOS
-  end
 end

@@ -1,11 +1,11 @@
-require 'formula'
+require "formula"
 
 class Wgetpaste < Formula
-  homepage 'http://wgetpaste.zlin.dk/'
-  url 'http://wgetpaste.zlin.dk/wgetpaste-2.20.tar.bz2'
-  sha1 'a50a5ecb236b4f7bbd4188e47a3b892b1dc90595'
+  homepage "http://wgetpaste.zlin.dk/"
+  url "http://wgetpaste.zlin.dk/wgetpaste-2.25.tar.bz2"
+  sha1 "4f2220714522c724928dee67ed1c5d7feed1c207"
 
   def install
-    bin.install 'wgetpaste'
+    bin.install "wgetpaste"
   end
 end

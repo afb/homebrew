@@ -2,95 +2,102 @@ require 'formula'
 
 class Go < Formula
   homepage 'http://golang.org'
-  url 'http://go.googlecode.com/files/go1.0.3.src.tar.gz'
-  version '1.0.3'
-  sha1 '1a67293c10d6c06c633c078a7ca67e98c8b58471'
   head 'https://go.googlecode.com/hg/'
+  url 'https://storage.googleapis.com/golang/go1.3.1.src.tar.gz'
+  version '1.3.1'
+  sha1 'bc296c9c305bacfbd7bff9e1b54f6f66ae421e6e'
 
-  skip_clean 'bin'
+  bottle do
+    revision 1
+    sha1 "9637d93efc0f70b1bdf3412f6684247a46104105" => :mavericks
+    sha1 "fbb03d1111c201253abf12ec8440761b0d6833f7" => :mountain_lion
+    sha1 "398053db3dc27be9797bd4cdd583b57a12033483" => :lion
+  end
 
   option 'cross-compile-all', "Build the cross-compilers and runtime support for all supported platforms"
   option 'cross-compile-common', "Build the cross-compilers and runtime support for darwin, linux and windows"
-
-  devel do
-    url 'https://go.googlecode.com/files/go1.1beta2.src.tar.gz'
-    version '1.1beta2'
-    sha1 '70d7642a6ea065a23458b9ea28e370b19912e52d'
-  end
-
-  unless build.stable?
-    fails_with :clang do
-      cause "clang: error: no such file or directory: 'libgcc.a'"
-    end
-  end
+  option 'without-cgo', "Build without cgo"
 
   def install
     # install the completion scripts
-    (prefix/'etc/bash_completion.d').install 'misc/bash/go' => 'go-completion.bash'
-    (share/'zsh/site-functions').install 'misc/zsh/go' => '_go'
+    bash_completion.install 'misc/bash/go' => 'go-completion.bash'
+    zsh_completion.install 'misc/zsh/go' => '_go'
 
+    # host platform (darwin) must come last in the targets list
     if build.include? 'cross-compile-all'
       targets = [
-        ['linux',   ['386', 'amd64', 'arm'], { :cgo => false }],
-        ['freebsd', ['386', 'amd64'],        { :cgo => false }],
-
-        ['openbsd', ['386', 'amd64'],        { :cgo => false }],
-
-        ['windows', ['386', 'amd64'],        { :cgo => false }],
-
-        # Host platform (darwin/amd64) must always come last
-        ['darwin',  ['386', 'amd64'],        { :cgo => true  }],
+        ['linux',   ['386', 'amd64', 'arm']],
+        ['freebsd', ['386', 'amd64', 'arm']],
+        ['netbsd',  ['386', 'amd64', 'arm']],
+        ['openbsd', ['386', 'amd64']],
+        ['windows', ['386', 'amd64']],
+        ['dragonfly', ['386', 'amd64']],
+        ['plan9',   ['386', 'amd64']],
+        ['solaris', ['amd64']],
+        ['darwin',  ['386', 'amd64']],
       ]
     elsif build.include? 'cross-compile-common'
       targets = [
-        ['linux',   ['386', 'amd64', 'arm'], { :cgo => false }],
-        ['windows', ['386', 'amd64'],        { :cgo => false }],
-
-        # Host platform (darwin/amd64) must always come last
-        ['darwin',  ['386', 'amd64'],        { :cgo => true  }],
+        ['linux',   ['386', 'amd64', 'arm']],
+        ['windows', ['386', 'amd64']],
+        ['darwin',  ['386', 'amd64']],
       ]
     else
-      targets = [
-        ['darwin', [''], { :cgo => true }]
-      ]
+      targets = [['darwin', ['']]]
     end
 
     # The version check is due to:
     # http://codereview.appspot.com/5654068
-    Pathname.new('VERSION').write 'default' if build.head?
+    (buildpath/'VERSION').write('default') if build.head?
 
     cd 'src' do
-      # Build only. Run `brew test go` to run distrib's tests.
-      targets.each do |(os, archs, opts)|
-      archs.each do |arch|
-        ENV['GOROOT_FINAL'] = prefix
-        ENV['GOOS']         = os
-        ENV['GOARCH']       = arch
-        ENV['CGO_ENABLED']  = opts[:cgo] ? "1" : "0"
-        allow_fail = opts[:allow_fail] ? "|| true" : ""
-        system "./make.bash --no-clean #{allow_fail}"
-      end
+      targets.each do |os, archs|
+        cgo_enabled = os == 'darwin' && build.with?('cgo') ? "1" : "0"
+        archs.each do |arch|
+          ENV['GOROOT_FINAL'] = libexec
+          ENV['GOOS']         = os
+          ENV['GOARCH']       = arch
+          ENV['CGO_ENABLED']  = cgo_enabled
+          system "./make.bash", "--no-clean"
+        end
       end
     end
 
-    # cleanup ENV
-    ENV.delete('GOROOT_FINAL')
-    ENV.delete('GOOS')
-    ENV.delete('GOARCH')
-    ENV.delete('CGO_ENABLED')
+    (buildpath/'pkg/obj').rmtree
 
-    Pathname.new('pkg/obj').rmtree
+    libexec.install Dir['*']
+    bin.install_symlink Dir["#{libexec}/bin/go*"]
+  end
 
-    # Don't install header files; they aren't necessary and can
-    # cause problems with other builds. See:
-    # http://trac.macports.org/ticket/30203
-    # http://code.google.com/p/go/issues/detail?id=2407
-    prefix.install(Dir['*'] - ['include'])
+  def caveats; <<-EOS.undent
+    As of go 1.2, a valid GOPATH is required to use the `go get` command:
+      http://golang.org/doc/code.html#GOPATH
+
+    `go vet` and `go doc` are now part of the go.tools sub repo:
+      http://golang.org/doc/go1.2#go_tools_godoc
+
+    To get `go vet` and `go doc` run:
+      go get code.google.com/p/go.tools/cmd/godoc
+      go get code.google.com/p/go.tools/cmd/vet
+
+    You may wish to add the GOROOT-based install location to your PATH:
+      export PATH=$PATH:#{opt_libexec}/bin
+    EOS
   end
 
   test do
-    cd "#{prefix}/src" do
-      system "./run.bash", "--no-rebuild"
-    end
+    (testpath/'hello.go').write <<-EOS.undent
+    package main
+
+    import "fmt"
+
+    func main() {
+        fmt.Println("Hello World")
+    }
+    EOS
+    # Run go fmt check for no errors then run the program.
+    # This is a a bare minimum of go working as it uses fmt, build, and run.
+    system "#{bin}/go", "fmt", "hello.go"
+    assert_equal "Hello World\n", `#{bin}/go run hello.go`
   end
 end

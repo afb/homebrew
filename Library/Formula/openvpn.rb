@@ -1,14 +1,24 @@
 require 'formula'
 
 class Openvpn < Formula
-  homepage 'http://openvpn.net/'
-  url 'http://build.openvpn.net/downloads/releases/openvpn-2.3.1.tar.gz'
-  mirror 'http://swupdate.openvpn.org/community/releases/openvpn-2.3.1.tar.gz'
-  sha256 'bd2d7d85b39d4586bcdb74b36eb48d0ac4ab1e6812654c719b04826fdc70fb3c'
+  homepage 'http://openvpn.net/index.php/download/community-downloads.html'
+  url 'http://build.openvpn.net/downloads/releases/openvpn-2.3.4.tar.gz'
+  mirror 'http://swupdate.openvpn.org/community/releases/openvpn-2.3.4.tar.gz'
+  sha256 'af506d5f48568fa8d2f2435cb3fad35f9a9a8f263999ea6df3ba296960cec85a'
 
   depends_on 'lzo'
+  depends_on 'tuntap'
 
   def install
+    # pam_appl header is installed in a different location on Leopard
+    # and older; reported upstream https://community.openvpn.net/openvpn/ticket/326
+    if MacOS.version < :snow_leopard
+      %w[auth-pam.c pamdl.c].each do |file|
+        inreplace "src/plugins/auth-pam/#{file}",
+          "security/pam_appl.h", "pam/pam_appl.h"
+      end
+    end
+
     # Build and install binary
     system "./configure", "--disable-debug",
                           "--disable-dependency-tracking",
@@ -17,14 +27,11 @@ class Openvpn < Formula
     system "make install"
 
     # Adjust sample file paths
-    inreplace ["sample/sample-config-files/openvpn-startup.sh"] do |s|
-      s.gsub! "/etc/openvpn", etc+'openvpn'
-    end
+    inreplace "sample/sample-config-files/openvpn-startup.sh",
+      "/etc/openvpn", "#{etc}/openvpn"
 
     # Install sample files
-    Dir['sample/sample-*'].each do |d|
-      (share + 'doc/openvpn' + d).install Dir[d+'/*']
-    end
+    (doc/"sample").install Dir["sample/sample-*"]
 
     # Create etc & var paths
     (etc + 'openvpn').mkpath
@@ -32,14 +39,8 @@ class Openvpn < Formula
   end
 
   def caveats; <<-EOS.undent
-    You may also wish to install tuntap:
-
-      The TunTap project provides kernel extensions for Mac OS X that allow
-      creation of virtual network interfaces.
-
-      http://tuntaposx.sourceforge.net/
-
-    Because these are kernel extensions, there is no Homebrew formula for tuntap.
+    Make sure to follow the directions given by `brew info tuntap`
+    before trying to use OpenVPN.
 
     For OpenVPN to work as a server, you will need to create configuration file
     in #{etc}/openvpn, samples can be found in #{share}/doc/openvpn
@@ -57,7 +58,7 @@ class Openvpn < Formula
       <string>#{plist_name}</string>
       <key>ProgramArguments</key>
       <array>
-        <string>#{opt_prefix}/sbin/openvpn</string>
+        <string>#{opt_sbin}/openvpn</string>
         <string>--config</string>
         <string>#{etc}/openvpn/openvpn.conf</string>
       </array>

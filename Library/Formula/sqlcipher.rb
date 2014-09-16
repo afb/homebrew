@@ -1,13 +1,11 @@
-require 'formula'
+require "formula"
 
 class Sqlcipher < Formula
   homepage "http://sqlcipher.net"
-  url "https://github.com/sqlcipher/sqlcipher/archive/v2.1.1.tar.gz"
-  sha1 "032110255562e9ada5f31078dc8426441a47a7ce"
+  url "https://github.com/sqlcipher/sqlcipher/archive/v3.1.0.tar.gz"
+  sha1 "350a7cbc01690825cb6beca3b9bf6943f71a52de"
 
   head "https://github.com/sqlcipher/sqlcipher.git"
-
-  keg_only "SQLCipher conflicts with the system and Homebrew SQLites."
 
   def install
     system "./configure", "--prefix=#{prefix}", "--enable-tempstore=yes",

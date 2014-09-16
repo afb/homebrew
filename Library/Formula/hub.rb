@@ -1,20 +1,27 @@
 require 'formula'
 
 class Hub < Formula
-  homepage 'http://defunkt.io/hub/'
-  url 'https://github.com/defunkt/hub/archive/v1.10.6.tar.gz'
-  sha1 'e29d158c65a10ef3889f4af438bf1fb50fbd0536'
-  head 'https://github.com/defunkt/hub.git'
+  homepage 'http://hub.github.com/'
+  url 'https://github.com/github/hub/archive/v1.12.2.tar.gz'
+  sha1 '65359d3dcc8e1a0986aab3726f6047bfb9df3d7c'
+  head 'https://github.com/github/hub.git', :branch => '1.12-stable'
+
+  option 'without-completions', 'Disable bash/zsh completions'
 
   def install
+    ENV['GIT_DIR'] = cached_download/'.git' if build.head?
+
     rake "install", "prefix=#{prefix}"
-    bash_completion.install 'etc/hub.bash_completion.sh'
-    zsh_completion.install 'etc/hub.zsh_completion' => '_hub'
+
+    if build.with? 'completions'
+      bash_completion.install 'etc/hub.bash_completion.sh'
+      zsh_completion.install 'etc/hub.zsh_completion' => '_hub'
+    end
   end
 
   test do
     HOMEBREW_REPOSITORY.cd do
-      `#{bin}/hub ls-files -- bin`.chomp == 'bin/brew'
+      assert_equal "bin/brew", shell_output("#{bin}/hub ls-files -- bin").strip
     end
   end
 end

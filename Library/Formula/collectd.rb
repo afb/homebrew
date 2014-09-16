@@ -1,14 +1,15 @@
-require 'formula'
+require "formula"
 
 class Collectd < Formula
-  homepage 'http://collectd.org/'
-  url 'http://collectd.org/files/collectd-5.3.0.tar.gz'
-  sha256 'f84edbd78a00c8614956d44f2f53a435a8d981b62323b94fda88cfa50964dbc3'
+  homepage "http://collectd.org/"
+  url "http://collectd.org/files/collectd-5.4.1.tar.bz2"
+  sha1 "cea47e3936ed081bd71efacf7ba825fc837dc347"
 
   # Will fail against Java 1.7
   option "java", "Enable Java 1.6 support"
+  option "debug", "Enable debug support"
 
-  depends_on 'pkg-config' => :build
+  depends_on "pkg-config" => :build
 
   fails_with :clang do
     build 318
@@ -28,8 +29,9 @@ class Collectd < Formula
               --localstatedir=#{var}
               --with-python=/usr/bin]
 
-    args << "--disable-embedded-perl" if MacOS.version == :leopard
+    args << "--disable-embedded-perl" if MacOS.version <= :leopard
     args << "--disable-java" unless build.include? "java"
+    args << "--enable-debug" if build.include? "debug"
 
     system "./configure", *args
     system "make install"

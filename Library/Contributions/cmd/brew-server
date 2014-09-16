@@ -1,4 +1,4 @@
-#!/System/Library/Frameworks/Ruby.framework/Versions/1.8/usr/bin/ruby
+#!/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/ruby
 
 ## brew server: Run a local webserver for browsing available and installed brews.
 # Note: this external command is ruby, but set up as a shell script, so that it gets exec'd.
@@ -8,8 +8,16 @@ $:.unshift(ENV['HOMEBREW_LIBRARY_PATH'])
 
 require 'global'
 require 'formula'
+require 'cmd/search'
 
 require 'rubygems'
+
+opoo <<-EOS.undent
+  brew server is unsupported and will be removed soon.
+  You should use http://braumeister.org instead.
+  Please feel free volunteer to support it in a tap.
+
+EOS
 
 begin
   require 'sinatra'
@@ -109,7 +117,7 @@ end
 
 get '/search' do
   q = params['q']
-  results = search_brews(q)
+  results = Homebrew.search_formulae(q)
 
   html_page("Results") do |s|
     s << <<-HTML

@@ -1,59 +1,46 @@
 require 'requirement'
-require 'requirements/conflict_requirement'
+require 'requirements/fortran_dependency'
 require 'requirements/language_module_dependency'
-require 'requirements/x11_dependency'
+require 'requirements/minimum_macos_requirement'
 require 'requirements/mpi_dependency'
+require 'requirements/osxfuse_dependency'
+require 'requirements/python_dependency'
+require 'requirements/x11_dependency'
 
 class XcodeDependency < Requirement
   fatal true
-  build true
 
   satisfy(:build_env => false) { MacOS::Xcode.installed? }
 
-  def message; <<-EOS.undent
-    A full installation of Xcode.app is required to compile this software.
-    Installing just the Command Line Tools is not sufficent.
+  def message
+    message = <<-EOS.undent
+      A full installation of Xcode.app is required to compile this software.
+      Installing just the Command Line Tools is not sufficient.
     EOS
+    if MacOS.version >= :lion
+      message += <<-EOS.undent
+        Xcode can be installed from the App Store.
+      EOS
+    else
+      message += <<-EOS.undent
+        Xcode can be installed from https://developer.apple.com/downloads/
+      EOS
+    end
   end
 end
 
 class MysqlDependency < Requirement
   fatal true
+  default_formula 'mysql'
 
   satisfy { which 'mysql_config' }
-
-  def message; <<-EOS.undent
-    MySQL is required to install.
-
-    You can install this with Homebrew using:
-      brew install mysql-connector-c
-        For MySQL client libraries only.
-
-      brew install mysql
-        For MySQL server.
-
-    Or you can use an official installer from:
-      http://dev.mysql.com/downloads/mysql/
-    EOS
-  end
 end
 
 class PostgresqlDependency < Requirement
   fatal true
+  default_formula 'postgresql'
 
   satisfy { which 'pg_config' }
-
-  def message
-    <<-EOS.undent
-      Postgres is required to install.
-
-      You can install this with Homebrew using:
-        brew install postgres
-
-      Or you can use an official installer from:
-        http://www.postgresql.org/download/macosx/
-    EOS
-  end
 end
 
 class TeXDependency < Requirement
@@ -61,30 +48,21 @@ class TeXDependency < Requirement
 
   satisfy { which('tex') || which('latex') }
 
-  def message; <<-EOS.undent
-    A LaTeX distribution is required to install.
+  def message;
+    if File.exist?("/usr/texbin")
+      texbin_path = "/usr/texbin"
+    else
+      texbin_path = "its bin directory"
+    end
+
+    <<-EOS.undent
+    A LaTeX distribution is required for Homebrew to install this formula.
 
     You can install MacTeX distribution from:
       http://www.tug.org/mactex/
 
-    Make sure that its bin directory is in your PATH before proceeding.
-
-    You may also need to restore the ownership of Homebrew install:
-      sudo chown -R $USER `brew --prefix`
-    EOS
-  end
-end
-
-class CLTDependency < Requirement
-  fatal true
-  build true
-
-  satisfy(:build_env => false) { MacOS::CLT.installed? }
-
-  def message; <<-EOS.undent
-    The Command Line Tools for Xcode are required to compile this software.
-    The standalone package can be obtained from http://connect.apple.com,
-    or it can be installed via Xcode's preferences.
+    Make sure that "/usr/texbin", or the location you installed it to, is in
+    your PATH before proceeding.
     EOS
   end
 end
@@ -93,13 +71,14 @@ class ArchRequirement < Requirement
   fatal true
 
   def initialize(arch)
-    @arch = arch
+    @arch = arch.pop
     super
   end
 
   satisfy do
     case @arch
     when :x86_64 then MacOS.prefer_64_bit?
+    when :intel, :ppc then Hardware::CPU.type == @arch
     end
   end
 
@@ -110,14 +89,40 @@ end
 
 class MercurialDependency < Requirement
   fatal true
+  default_formula 'mercurial'
 
   satisfy { which('hg') }
+end
 
-  def message; <<-EOS.undent
-    Mercurial is needed to install this software.
+class GitDependency < Requirement
+  fatal true
+  default_formula 'git'
+  satisfy { !!which('git') }
+end
 
-    You can install this with Homebrew using:
-      brew install mercurial
+class JavaDependency < Requirement
+  fatal true
+  satisfy { java_version }
+
+  def initialize(tags)
+    @version = tags.pop
+    super
+  end
+
+  def java_version
+    args = %w[/usr/libexec/java_home --failfast]
+    args << "--version" << "#{@version}+" if @version
+    quiet_system(*args)
+  end
+
+  def message
+    version_string = " #{@version}" if @version
+
+    <<-EOS.undent
+      Java#{version_string} is required for Homebrew to install this formula.
+
+      You can install Java from:
+        http://www.oracle.com/technetwork/java/javase/downloads/index.html
     EOS
   end
 end

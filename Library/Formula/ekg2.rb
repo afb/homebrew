@@ -10,17 +10,17 @@ class Ekg2 < Formula
   depends_on 'libgadu' => :optional
 
   def install
-    readline = Formula.factory 'readline'
+    readline = Formula['readline'].opt_prefix
 
     args = ["--disable-debug", "--disable-dependency-tracking",
             "--prefix=#{prefix}",
             "--without-python",
             "--without-perl",
-            "--with-readline=#{readline.prefix}",
+            "--with-readline=#{readline}",
             "--without-gtk",
             "--enable-unicode"]
 
-    args << build.with?("libgadu") ? "--with-libgadu" : "--without-libgadu"
+    args << (build.with?("libgadu") ? "--with-libgadu" : "--without-libgadu")
 
     system "./configure", *args
     system "make install"

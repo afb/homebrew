@@ -3,33 +3,26 @@ require 'formula'
 class Emacs23Installed < Requirement
   fatal true
   env :userpaths
+  default_formula 'emacs'
 
   satisfy do
     `emacs --version 2>/dev/null` =~ /^GNU Emacs (\d{2})/
     $1.to_i >= 23
   end
-
-  def message; <<-EOS.undent
-    Emacs 23 or greater is required to build this software.
-
-    You can install this with Homebrew:
-      brew install emacs
-
-    Or you can use any other Emacs distribution
-    that provides version 23 or greater.
-    EOS
-  end
 end
 
 class Mu < Formula
   homepage 'http://www.djcbsoftware.nl/code/mu/'
-  url 'http://mu0.googlecode.com/files/mu-0.9.9.5.tar.gz'
-  sha1 '825e3096e0763a12b8fdf77bd41625ee15ed09eb'
+  url 'https://github.com/djcb/mu/archive/v0.9.9.6.tar.gz'
+  sha1 '45feb511fecf8b306c87a42f3a84858ac442642c'
 
   head 'https://github.com/djcb/mu.git'
 
   option 'with-emacs', 'Build with emacs support'
 
+  depends_on 'autoconf' => :build
+  depends_on 'automake' => :build
+  depends_on 'libtool' => :build
   depends_on 'pkg-config' => :build
   depends_on 'gettext'
   depends_on 'glib'
@@ -37,23 +30,24 @@ class Mu < Formula
   depends_on 'xapian'
   depends_on Emacs23Installed if build.with? 'emacs'
 
-  if build.head?
-    depends_on 'automake' => :build
-    depends_on 'libtool' => :build
-  end
-
   env :std if build.with? 'emacs'
 
   def install
     # Explicitly tell the build not to include emacs support as the version
     # shipped by default with Mac OS X is too old.
-    ENV['EMACS'] = 'no' unless build.with? 'emacs'
+    ENV['EMACS'] = 'no' if build.without? 'emacs'
 
-    system 'autoreconf', '-ivf' if build.head?
+    # I dunno.
+    # https://github.com/djcb/mu/issues/332
+    # https://github.com/Homebrew/homebrew/issues/25524
+    ENV.delete 'MACOSX_DEPLOYMENT_TARGET'
+
+    system 'autoreconf', '-ivf'
     system "./configure", "--disable-dependency-tracking",
                           "--prefix=#{prefix}",
                           "--with-gui=none"
     system "make"
+    system "make test"
     system "make install"
   end
 

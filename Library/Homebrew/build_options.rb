@@ -1,49 +1,23 @@
-require 'options'
-
-# This class holds the build-time options defined for a Formula,
-# and provides named access to those options during install.
 class BuildOptions
-  attr_accessor :args
-  include Enumerable
-
-  def initialize args
-    @args = Options.coerce(args)
-    @options = Options.new
-  end
-
-  def add name, description=nil
-    description ||= case name.to_s
-      when "universal" then "Build a universal binary"
-      when "32-bit" then "Build 32-bit only"
-      end.to_s
-
-    @options << Option.new(name, description)
-  end
-
-  def has_option? name
-    any? { |opt| opt.name == name }
-  end
-
-  def empty?
-    @options.empty?
-  end
-
-  def each(*args, &block)
-    @options.each(*args, &block)
-  end
-
-  def as_flags
-    @options.as_flags
+  def initialize(args, options)
+    @args = args
+    @options = options
   end
 
   def include? name
-    args.include? '--' + name
+    @args.include?("--#{name}")
   end
 
-  def with? name
-    if has_option? "with-#{name}"
+  def with? val
+    if val.respond_to?(:option_name)
+      name = val.option_name
+    else
+      name = val
+    end
+
+    if option_defined? "with-#{name}"
       include? "with-#{name}"
-    elsif has_option? "without-#{name}"
+    elsif option_defined? "without-#{name}"
       not include? "without-#{name}"
     else
       false
@@ -54,12 +28,16 @@ class BuildOptions
     not with? name
   end
 
+  def bottle?
+    include? "build-bottle"
+  end
+
   def head?
-    args.include? '--HEAD'
+    include? "HEAD"
   end
 
   def devel?
-    args.include? '--devel'
+    include? "devel"
   end
 
   def stable?
@@ -68,21 +46,32 @@ class BuildOptions
 
   # True if the user requested a universal build.
   def universal?
-    args.include?('--universal') && has_option?('universal')
+    include?("universal") && option_defined?("universal")
+  end
+
+  # True if the user requested to enable C++11 mode.
+  def cxx11?
+    include?("c++11") && option_defined?("c++11")
   end
 
   # Request a 32-bit only build.
   # This is needed for some use-cases though we prefer to build Universal
   # when a 32-bit version is needed.
   def build_32_bit?
-    args.include?('--32-bit') && has_option?('32-bit')
+    include?("32-bit") && option_defined?("32-bit")
   end
 
   def used_options
-    Options.new(@options & @args)
+    @options & @args
   end
 
   def unused_options
-    Options.new(@options - @args)
+    @options - @args
+  end
+
+  private
+
+  def option_defined? name
+    @options.include? name
   end
 end

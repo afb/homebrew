@@ -2,10 +2,12 @@ require 'formula'
 
 class Direnv < Formula
   homepage 'http://www.direnv.net'
-  url 'https://github.com/zimbatm/direnv/archive/v0.1.154.tar.gz'
-  sha1 '86a87d7d3c193666ffde47b1fe52dfb2847786ff'
+  url 'https://github.com/zimbatm/direnv/archive/v2.4.0.tar.gz'
+  sha1 '1fc9b77eb60c6d22d16bdb059edc1db0f1228dea'
 
   head 'https://github.com/zimbatm/direnv.git'
+
+  depends_on "go" => :build
 
   def install
     system "make", "install", "DESTDIR=#{prefix}"

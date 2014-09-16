@@ -1,62 +1,44 @@
 require 'formula'
 
-class FrameworkPython < Requirement
-  fatal true
-  env :userpaths
-
-  satisfy do
-    q = `python -c "import distutils.sysconfig as c; print(c.get_config_var('PYTHONFRAMEWORK'))"`
-    not q.chomp.empty?
-  end
-
-  def message
-    "Python needs to be built as a framework."
-  end
-end
-
 class Wxmac < Formula
-  homepage 'http://www.wxwidgets.org'
-  url 'http://sourceforge.net/projects/wxpython/files/wxPython/2.9.4.0/wxPython-src-2.9.4.0.tar.bz2'
-  sha1 'c292cd45b51e29c558c4d9cacf93c4616ed738b9'
+  homepage "http://www.wxwidgets.org"
+  url "https://downloads.sourceforge.net/project/wxwindows/3.0.1/wxWidgets-3.0.1.tar.bz2"
+  mirror "https://mirrors.kernel.org/debian/pool/main/w/wxwidgets3.0/wxwidgets3.0_3.0.1.orig.tar.bz2"
+  sha1 "73e58521d6871c9f4d1e7974c6e3a81629fddcf8"
 
-  option 'no-python', 'Do not build Python bindings'
-
-  depends_on FrameworkPython unless build.include? "no-python"
-
-  def install_wx_python
-    args = [
-      # Reference our wx-config
-      "WX_CONFIG=#{bin}/wx-config",
-      # At this time Wxmac is installed Unicode only
-      "UNICODE=1",
-      # Some scripts (e.g. matplotlib) expect to `import wxversion`, which is
-      # only available on a multiversion build. Besides that `import wx` still works.
-      "INSTALL_MULTIVERSION=1",
-      # OpenGL and stuff
-      "BUILD_GLCANVAS=1",
-      "BUILD_GIZMOS=1",
-      "BUILD_STC=1"
-    ]
-    cd "wxPython" do
-      ENV.append_to_cflags '-arch x86_64' if MacOS.prefer_64_bit?
-
-      system "python", "setup.py",
-                       "build_ext",
-                       "WXPORT=osx_cocoa",
-                       *args
-      system "python", "setup.py",
-                       "install",
-                       "--prefix=#{prefix}",
-                       "WXPORT=osx_cocoa",
-                       *args
+  # Patch to fix wx so it compiles on Yosemite.
+  # See http://trac.wxwidgets.org/ticket/16329
+    if MacOS.version == :yosemite
+      patch :p0 do
+        url "http://trac.wxwidgets.org/raw-attachment/ticket/16329/wx_webview.patch"
+        sha1 "4621be6cf308d50d22333707b17d243861c74a7d"
     end
   end
 
+  bottle do
+    revision 6
+    sha1 "fa5b9dc8ff899b0856cf806d17b18b4f40e51e29" => :mavericks
+    sha1 "8b23999086a9890c5b9ee0d7af25492f6c9be158" => :mountain_lion
+    sha1 "a12b5cb4322a7b8aae9fde6fdbeff4b9e3ef7cda" => :lion
+  end
+
+  depends_on "jpeg"
+  depends_on "libpng"
+  depends_on "libtiff"
+
   def install
     # need to set with-macosx-version-min to avoid configure defaulting to 10.5
+    # need to enable universal binary build in order to build all x86_64
+    # FIXME I don't believe this is the whole story, surely this can be fixed
+    # without building universal for users who don't need it. - Jack
+    # headers need to specify x86_64 and i386 or will try to build for ppc arch
+    # and fail on newer OSes
+    # https://trac.macports.org/browser/trunk/dports/graphics/wxWidgets30/Portfile#L80
+    ENV.universal_binary
     args = [
       "--disable-debug",
       "--prefix=#{prefix}",
+      "--enable-shared",
       "--enable-unicode",
       "--enable-std_string",
       "--enable-display",
@@ -64,33 +46,29 @@ class Wxmac < Formula
       "--with-osx_cocoa",
       "--with-libjpeg",
       "--with-libtiff",
+      # Otherwise, even in superenv, the internal libtiff can pick
+      # up on a nonuniversal xz and fail
+      # https://github.com/Homebrew/homebrew/issues/22732
+      "--without-liblzma",
       "--with-libpng",
       "--with-zlib",
       "--enable-dnd",
       "--enable-clipboard",
       "--enable-webkit",
       "--enable-svg",
+      "--enable-mediactrl",
+      "--enable-graphics_ctx",
+      "--enable-controls",
+      "--enable-dataviewctrl",
       "--with-expat",
-      "--with-macosx-version-min=#{MacOS.version}"
+      "--with-macosx-version-min=#{MacOS.version}",
+      "--enable-universal_binary=#{Hardware::CPU.universal_archs.join(',')}",
+      "--disable-precomp-headers",
+      # This is the default option, but be explicit
+      "--disable-monolithic"
     ]
 
     system "./configure", *args
     system "make install"
-
-    unless build.include? "no-python"
-      ENV['WXWIN'] = Dir.getwd
-      # We have already downloaded wxPython in a bundle with wxWidgets
-      install_wx_python
-    end
-  end
-
-  def caveats
-    s = ''
-    fp = FrameworkPython.new
-    unless build.include? 'no-python' or fp.satisfied?
-      s += fp.message
-    end
-
-    return s
   end
 end

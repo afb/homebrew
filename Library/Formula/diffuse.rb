@@ -1,11 +1,11 @@
-require 'formula'
+require "formula"
 
 class Diffuse < Formula
-  homepage 'http://diffuse.sourceforge.net/'
-  url 'http://downloads.sourceforge.net/project/diffuse/diffuse/0.4.6/diffuse-0.4.6.tar.bz2'
-  sha1 '29439e2a069ec00bc50347a59ec410d79ab3735e'
+  homepage "http://diffuse.sourceforge.net/"
+  url "https://downloads.sourceforge.net/project/diffuse/diffuse/0.4.8/diffuse-0.4.8.tar.bz2"
+  sha1 "473f7e82f57cc3a5ce0378eea8aede19a3f2a9df"
 
-  depends_on 'pygtk'
+  depends_on "pygtk"
 
   def install
     system "python", "./install.py",
@@ -14,7 +14,7 @@ class Diffuse < Formula
                      "--prefix=#{prefix}"
   end
 
-  def test
+  test do
     system "#{bin}/diffuse", "--help"
   end
 end

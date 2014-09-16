@@ -1,24 +1,30 @@
-require 'formula'
+require "formula"
 
 class Xmp < Formula
-  homepage 'http://xmp.sourceforge.net'
-  url 'http://downloads.sourceforge.net/project/xmp/xmp/4.0.4/xmp-4.0.4.tar.gz'
-  sha1 '2eb9750790d660b014fad75d5331b4d05553302b'
-  head 'git://git.code.sf.net/p/xmp/xmp-cli'
+  homepage "http://xmp.sourceforge.net"
+  url "https://downloads.sourceforge.net/project/xmp/xmp/4.0.8/xmp-4.0.8.tar.gz"
+  sha1 "8ea2ba59a9f93ccca904513f374a62f6e450829b"
 
-  depends_on :autoconf if build.head?
-  depends_on 'libxmp'
+  head do
+    url "git://git.code.sf.net/p/xmp/xmp-cli"
 
-  def install
-    system "autoconf" if build.head?
-    system "./configure", "--prefix=#{prefix}"
-    system "make install"
-
-    # install the included demo song
-    share.install "ub-name.it" unless build.head?
+    depends_on "autoconf" => :build
+    depends_on "automake" => :build
+    depends_on "libtool"  => :build
   end
 
-  def test
-    system "#{bin}/xmp", "--load-only", share/"ub-name.it"
+  depends_on "pkg-config" => :build
+  depends_on "libxmp"
+
+  def install
+    if build.head?
+      system "glibtoolize"
+      system "aclocal"
+      system "autoconf"
+      system "automake", "--add-missing"
+    end
+
+    system "./configure", "--prefix=#{prefix}"
+    system "make install"
   end
 end

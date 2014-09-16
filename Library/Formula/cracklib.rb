@@ -2,8 +2,14 @@ require 'formula'
 
 class Cracklib < Formula
   homepage 'http://cracklib.sourceforge.net/'
-  url 'http://sourceforge.net/projects/cracklib/files/cracklib/2.8.22/cracklib-2.8.22.tar.gz'
-  sha1 'd91d977a1909e0cc3f5cb30754ba5e5e90655ab0'
+  url 'https://downloads.sourceforge.net/project/cracklib/cracklib/2.9.0/cracklib-2.9.0.tar.gz'
+  sha1 '827dcd24b14bf23911c34f4226b4453b24f949a3'
+
+  bottle do
+    sha1 "40df594cdc2483e6b68b75e019574dbe4fc10519" => :mavericks
+    sha1 "f67cff17c3c71fc0f947b47da85e6eeb0a45a3b8" => :mountain_lion
+    sha1 "c355b2de9ec2df8d647160d08236aef6a783c976" => :lion
+  end
 
   depends_on "gettext"
 

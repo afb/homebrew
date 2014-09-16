@@ -1,76 +1,67 @@
 require 'formula'
 
 class Qt < Formula
-  homepage 'http://qt-project.org/'
-  url 'http://releases.qt-project.org/qt4/source/qt-everywhere-opensource-src-4.8.4.tar.gz'
-  sha1 'f5880f11c139d7d8d01ecb8d874535f7d9553198'
+  homepage "http://qt-project.org/"
+
+  stable do
+    # Mirror rather than source set as primary because source is very slow.
+    url "http://qtmirror.ics.com/pub/qtproject/official_releases/qt/4.8/4.8.6/qt-everywhere-opensource-src-4.8.6.tar.gz"
+    mirror "http://download.qt-project.org/official_releases/qt/4.8/4.8.6/qt-everywhere-opensource-src-4.8.6.tar.gz"
+    sha1 "ddf9c20ca8309a116e0466c42984238009525da6"
+
+    # This patch should be able to be removed with the next stable Qt4 release.
+    patch do
+      url "https://raw.githubusercontent.com/DomT4/scripts/440e3cafde5bf6ec6f50cd28fa5bf89c280f1b53/Homebrew_Resources/Qt/qt4patch.diff"
+      sha1 "57246a33460246118a1fab7460c79f2077d3a929"
+    end
+  end
 
   bottle do
-    revision 1
-    sha1 '7fb679119b8b463055849dea791cc7fca62c62d1' => :mountain_lion
-    sha1 'b456ff5f8d18fc53b4546119d00d8ff0dda92f90' => :lion
-    sha1 '920992e5059a5c816b4eb245597fc028ff6b09ae' => :snow_leopard
+    revision 5
+    sha1 "34d66e17aaed4d2067297d4a64482d56f2382339" => :mavericks
+    sha1 "9ab96caa65e8b707deeb27caaff9ad8b1e906b2c" => :mountain_lion
+    sha1 "18b1d1a4aa89f92c4b9a9f202a95cc0896e03a9d" => :lion
   end
 
-  head 'git://gitorious.org/qt/qt.git', :branch => 'master'
+  head "git://gitorious.org/qt/qt.git", :branch => '4.8'
 
   option :universal
-  option 'with-qtdbus', 'Enable QtDBus module'
-  option 'with-qt3support', 'Enable deprecated Qt3Support module'
-  option 'with-demos-examples', 'Enable Qt demos and examples'
-  option 'with-debug-and-release', 'Compile Qt in debug and release mode'
-  option 'developer', 'Compile and link Qt with developer options'
+  option 'with-qt3support', 'Build with deprecated Qt3Support module support'
+  option 'with-docs', 'Build documentation'
+  option 'developer', 'Build and link with developer options'
 
-  depends_on :libpng
-
-  depends_on "d-bus" if build.with? 'qtdbus'
+  depends_on "d-bus" => :optional
   depends_on "mysql" => :optional
-  depends_on 'sqlite' if MacOS.version == :leopard
-
-  def patches
-    # Fixes compilation failure on Leopard.
-    # https://bugreports.qt-project.org/browse/QTBUG-23258
-    if MacOS.version == :leopard
-      "http://bugreports.qt-project.org/secure/attachment/26712/Patch-Qt-4.8-for-10.5"
-    end
-  end
 
   def install
-    ENV.append "CXXFLAGS", "-fvisibility=hidden"
-
-    # clang complains about extra qualifier since Xcode 4.6 (clang build 425)
-    # https://bugreports.qt-project.org/browse/QTBUG-29373
-    if MacOS.clang_build_version >= 425
-      inreplace "src/gui/kernel/qt_cocoa_helpers_mac_p.h",
-                "::TabletProximityRec",
-                "TabletProximityRec"
-    end
+    ENV.universal_binary if build.universal?
 
     args = ["-prefix", prefix,
-            "-system-libpng", "-system-zlib",
+            "-system-zlib",
+            "-qt-libtiff", "-qt-libpng", "-qt-libjpeg",
             "-confirm-license", "-opensource",
-            "-cocoa", "-fast" ]
+            "-nomake", "demos", "-nomake", "examples",
+            "-cocoa", "-fast", "-release"]
 
-    # we have to disable all tjos to avoid triggering optimization code
-    # that will fail with clang. Only seems to occur in superenv, perhaps
-    # because we rename clang to cc and Qt thinks it can build with special
-    # assembler commands. In --env=std, Qt seems aware of this.)
-    # But we want superenv, because it allows to build Qt in non-standard
-    # locations and with Xcode-only.
-    args << "-no-3dnow" if superenv?
+    if ENV.compiler == :clang
+        args << "-platform"
 
-    args << "-L#{MacOS::X11.prefix}/lib" << "-I#{MacOS::X11.prefix}/include" if MacOS::X11.installed?
-
-    args << "-platform" << "unsupported/macx-clang" if ENV.compiler == :clang
-
-    # See: https://github.com/mxcl/homebrew/issues/issue/744
-    args << "-system-sqlite" if MacOS.version == :leopard
+        if MacOS.version >= :mavericks
+          args << "unsupported/macx-clang-libc++"
+        else
+          args << "unsupported/macx-clang"
+        end
+    end
 
     args << "-plugin-sql-mysql" if build.with? 'mysql'
 
-    if build.with? 'qtdbus'
-      args << "-I#{Formula.factory('d-bus').lib}/dbus-1.0/include"
-      args << "-I#{Formula.factory('d-bus').include}/dbus-1.0"
+    if build.with? 'd-bus'
+      dbus_opt = Formula["d-bus"].opt_prefix
+      args << "-I#{dbus_opt}/lib/dbus-1.0/include"
+      args << "-I#{dbus_opt}/include/dbus-1.0"
+      args << "-L#{dbus_opt}/lib"
+      args << "-ldbus-1"
+      args << "-dbus-linked"
     end
 
     if build.with? 'qt3support'
@@ -79,9 +70,7 @@ class Qt < Formula
       args << "-no-qt3support"
     end
 
-    unless build.with? 'demos-examples'
-      args << "-nomake" << "demos" << "-nomake" << "examples"
-    end
+    args << "-nomake" << "docs" if build.without? 'docs'
 
     if MacOS.prefer_64_bit? or build.universal?
       args << '-arch' << 'x86_64'
@@ -91,15 +80,6 @@ class Qt < Formula
       args << '-arch' << 'x86'
     end
 
-    if build.with? 'debug-and-release'
-      args << "-debug-and-release"
-      # Debug symbols need to find the source so build in the prefix
-      mv "../qt-everywhere-opensource-src-#{version}", "#{prefix}/src"
-      cd "#{prefix}/src"
-    else
-      args << "-release"
-    end
-
     args << '-developer-build' if build.include? 'developer'
 
     system "./configure", *args
@@ -107,33 +87,23 @@ class Qt < Formula
     ENV.j1
     system "make install"
 
-    # stop crazy disk usage
-    (prefix+'doc/html').rmtree
-    (prefix+'doc/src').rmtree
     # what are these anyway?
     (bin+'pixeltool.app').rmtree
     (bin+'qhelpconverter.app').rmtree
     # remove porting file for non-humans
-    (prefix+'q3porting.xml').unlink
+    (prefix+'q3porting.xml').unlink if build.without? 'qt3support'
 
     # Some config scripts will only find Qt in a "Frameworks" folder
-    # VirtualBox is an example of where this is needed
-    # See: https://github.com/mxcl/homebrew/issues/issue/745
-    cd prefix do
-      ln_s lib, prefix + "Frameworks"
-    end
+    frameworks.install_symlink Dir["#{lib}/*.framework"]
 
     # The pkg-config files installed suggest that headers can be found in the
     # `include` directory. Make this so by creating symlinks from `include` to
     # the Frameworks' Headers folders.
-    Pathname.glob(lib + '*.framework/Headers').each do |path|
-      framework_name = File.basename(File.dirname(path), '.framework')
-      ln_s path.realpath, include+framework_name
+    Pathname.glob("#{lib}/*.framework/Headers") do |path|
+      include.install_symlink path => path.parent.basename(".framework")
     end
 
-    Pathname.glob(bin + '*.app').each do |path|
-      mv path, prefix
-    end
+    Pathname.glob("#{bin}/*.app") { |app| mv app, prefix }
   end
 
   test do

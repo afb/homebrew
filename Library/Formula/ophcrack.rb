@@ -2,8 +2,8 @@ require 'formula'
 
 class Ophcrack < Formula
   homepage 'http://ophcrack.sourceforge.net/'
-  url 'http://downloads.sourceforge.net/project/ophcrack/ophcrack/3.4.0/ophcrack-3.4.0.tar.bz2'
-  sha1 '346f7e4689f2c0fc65ba7087b1ae91d00edf15b6'
+  url 'https://downloads.sourceforge.net/project/ophcrack/ophcrack/3.6.0/ophcrack-3.6.0.tar.bz2'
+  sha1 '8e39b8c013b3f2144b23e33abeeadbb81e4120ca'
 
   def install
     system "./configure", "--disable-debug",
@@ -11,8 +11,6 @@ class Ophcrack < Formula
                           "--prefix=#{prefix}"
 
     system "make"
-    cd 'src' do
-      system "make install"
-    end
+    system "make", "-C", "src", "install"
   end
 end

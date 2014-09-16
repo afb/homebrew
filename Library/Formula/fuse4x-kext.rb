@@ -1,19 +1,19 @@
 require 'formula'
 
 class Fuse4xKext < Formula
-  homepage 'http://fuse4x.github.com'
+  homepage 'http://fuse4x.github.io'
   url 'https://github.com/fuse4x/kext/archive/fuse4x_0_9_2.tar.gz'
   sha1 '4222c14b38325d9e41fb0925d2681dda3e73e861'
 
   bottle do
-    # Bottle provided for Lion and newer since the Command Line Tools cannot
-    # compile things that use `xcodebuild`. Actual compilation takes ~10
-    # seconds so there is no need to bottle this for earlier systems.
-    revision 2
-
-    sha1 '66e546c4d8b590b0c67584b73a6731757a5d87fb' => :mountainlion
-    sha1 '08c877f8764d755e0574083ffc981105e3913a27' => :lion
+    cellar :any
+    revision 4
+    sha1 '1d1ab89b714ea897c981f356a659afaff977a0da' => :mavericks
+    sha1 '0a03e6a51e40fe3456b8f132549516e4cb996985' => :mountain_lion
+    sha1 '6f306f38557d016f5eaa0c999f2092d0767870e6' => :lion
   end
+
+  depends_on :xcode => :build
 
   def install
     ENV.delete('CC')
@@ -31,7 +31,7 @@ class Fuse4xKext < Formula
       "ARCHS=i386 #{'x86_64' if MacOS.prefer_64_bit?}", 'ONLY_ACTIVE_ARCH=NO'
     ]
 
-    system "/usr/bin/xcodebuild", *args
+    xcodebuild *args
     system "/bin/mkdir -p build/Release/fuse4x.kext/Support"
     system "/bin/cp build/Release/load_fuse4x build/Release/fuse4x.kext/Support"
 
@@ -62,7 +62,7 @@ class Fuse4xKext < Formula
     # filesystem layout convention from Apple.
     # Check if the user has fuse4x kext in the old location.
     # Remove this check Q4 2012 when it become clear that everyone migrated to 0.9.0+
-    if File.exists?('/System/Library/Extensions/fuse4x.kext/')
+    if File.exist?('/System/Library/Extensions/fuse4x.kext/')
       message += <<-EOS.undent
         You have older version of fuse4x installed. Please remove it by running:
 

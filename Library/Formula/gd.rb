@@ -1,17 +1,28 @@
 require 'formula'
 
 class Gd < Formula
-  homepage 'http://bitbucket.org/pierrejoye/gd-libgd'
-  url 'http://www.libgd.org/releases/gd-2.0.36RC1.tar.gz'
-  mirror 'http://download.osgeo.org/mapserver/libgd/gd-2.0.36RC1.tar.gz'
-  sha1 '21cf2ec93fd80836fc0cb4741201f7cc5440819a'
+  homepage 'http://libgd.bitbucket.org/'
+  url 'https://bitbucket.org/libgd/gd-libgd/downloads/libgd-2.1.0.tar.gz'
+  sha1 'a0f3053724403aef9e126f4aa5c662573e5836cd'
+  revision 2
 
-  head 'http://bitbucket.org/pierrejoye/gd-libgd', :using => :hg
+  bottle do
+    cellar :any
+    sha1 "473c1d133b471b82d8467b27b2e152479c868d19" => :mavericks
+    sha1 "368a0ece40759b7c453cbd600091c54e322bb180" => :mountain_lion
+    sha1 "9a941105a87d7811c6220c9eb072002741476d4d" => :lion
+  end
 
-  depends_on :libpng => :recommended
+  head 'https://bitbucket.org/libgd/gd-libgd', :using => :hg
+
+  option :universal
+
+  depends_on 'libpng' => :recommended
   depends_on 'jpeg' => :recommended
-  depends_on 'giflib' => :optional
-  depends_on :freetype => :optional
+  depends_on 'fontconfig' => :recommended
+  depends_on 'freetype' => :recommended
+  depends_on 'libtiff' => :recommended
+  depends_on 'libvpx' => :optional
 
   fails_with :llvm do
     build 2326
@@ -19,35 +30,52 @@ class Gd < Formula
   end
 
   def install
-    args = ["--prefix=#{prefix}"]
-    args << "--without-freetype" unless build.with? 'freetype'
+    ENV.universal_binary if build.universal?
+    args = %W{--disable-dependency-tracking --prefix=#{prefix}}
+
+    if build.with? "libpng"
+      args << "--with-png=#{Formula["libpng"].opt_prefix}"
+    else
+      args << "--without-png"
+    end
+
+    if build.with? "fontconfig"
+      args << "--with-fontconfig=#{Formula["fontconfig"].opt_prefix}"
+    else
+      args << "--without-fontconfig"
+    end
+
+    if build.with? "freetype"
+      args << "--with-freetype=#{Formula["freetype"].opt_prefix}"
+    else
+      args << "--without-freetype"
+    end
+
+    if build.with? "jpeg"
+      args << "--with-jpeg=#{Formula["jpeg"].opt_prefix}"
+    else
+      args << "--without-jpeg"
+    end
+
+    if build.with? "libtiff"
+      args << "--with-tiff=#{Formula["libtiff"].opt_prefix}"
+    else
+      args << "--without-tiff"
+    end
+
+    if build.with? "libvpx"
+      args << "--with-vpx=#{Formula["libvpx"].opt_prefix}"
+    else
+      args << "--without-vpx"
+    end
+
     system "./configure", *args
     system "make install"
-    (lib+'pkgconfig/gdlib.pc').write pc_file
-  end
-
-  def pc_file; <<-EOS.undent
-    prefix=#{opt_prefix}
-    exec_prefix=${prefix}
-    libdir=/${exec_prefix}/lib
-    includedir=/${prefix}/include
-    bindir=/${prefix}/bin
-    ldflags=  -L/${prefix}/lib
-
-    Name: gd
-    Description: A graphics library for quick creation of PNG or JPEG images
-    Version: #{version}
-    Requires:
-    Libs: -L${libdir} -lgd
-    Libs.private: -ljpeg -lpng12 -lz -lm
-    Cflags: -I${includedir}
-    EOS
   end
 
   test do
-    system "#{bin}/pngtogd", \
-      "/System/Library/Frameworks/SecurityInterface.framework/Versions/A/Resources/Key_Large.png", \
-      "gd_test.gd"
+    test_png = HOMEBREW_LIBRARY/"Homebrew/test/fixtures/test.png"
+    system "#{bin}/pngtogd", test_png, "gd_test.gd"
     system "#{bin}/gdtopng", "gd_test.gd", "gd_test.png"
   end
 end

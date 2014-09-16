@@ -2,6 +2,7 @@ require 'dependency'
 require 'dependencies'
 require 'requirement'
 require 'requirements'
+require 'requirements/ld64_dependency'
 require 'set'
 
 ## A dependency is a formula that another formula needs to install.
@@ -20,15 +21,21 @@ class DependencyCollector
     :chicken, :jruby, :lua, :node, :ocaml, :perl, :python, :rbx, :ruby
   ].freeze
 
+  CACHE = {}
+
+  def self.clear_cache
+    CACHE.clear
+  end
+
   attr_reader :deps, :requirements
 
   def initialize
     @deps = Dependencies.new
-    @requirements = ComparableSet.new
+    @requirements = Requirements.new
   end
 
   def add(spec)
-    case dep = build(spec)
+    case dep = fetch(spec)
     when Dependency
       @deps << dep
     when Requirement
@@ -37,80 +44,146 @@ class DependencyCollector
     dep
   end
 
-  def build(spec)
-    spec, tag = case spec
-                when Hash then spec.shift
-                else spec
-                end
+  def fetch(spec)
+    CACHE.fetch(cache_key(spec)) { |key| CACHE[key] = build(spec) }
+  end
 
-    parse_spec(spec, tag)
+  def cache_key(spec)
+    if Resource === spec && spec.download_strategy == CurlDownloadStrategy
+      File.extname(spec.url)
+    else
+      spec
+    end
+  end
+
+  def build(spec)
+    spec, tags = case spec
+                 when Hash then destructure_spec_hash(spec)
+                 else spec
+                 end
+
+    parse_spec(spec, Array(tags))
   end
 
   private
 
-  def parse_spec spec, tag
+  def destructure_spec_hash(spec)
+    spec.each { |o| return o }
+  end
+
+  def parse_spec(spec, tags)
     case spec
     when String
-      if tag && LANGUAGE_MODULES.include?(tag)
-        LanguageModuleDependency.new(tag, spec)
-      else
-        Dependency.new(spec, tag)
-      end
+      parse_string_spec(spec, tags)
+    when Resource
+      resource_dep(spec, tags)
     when Symbol
-      parse_symbol_spec(spec, tag)
-    when Dependency, Requirement
+      parse_symbol_spec(spec, tags)
+    when Requirement, Dependency
       spec
     when Class
-      if spec < Requirement
-        spec.new(tag)
-      else
-        raise "#{spec} is not a Requirement subclass"
-      end
+      parse_class_spec(spec, tags)
     else
-      raise "Unsupported type #{spec.class} for #{spec}"
+      raise TypeError, "Unsupported type #{spec.class.name} for #{spec.inspect}"
     end
   end
 
-  def parse_symbol_spec spec, tag
+  def parse_string_spec(spec, tags)
+    if tags.empty?
+      Dependency.new(spec, tags)
+    elsif (tag = tags.first) && LANGUAGE_MODULES.include?(tag)
+      LanguageModuleDependency.new(tag, spec, tags[1])
+    elsif HOMEBREW_TAP_FORMULA_REGEX === spec
+      TapDependency.new(spec, tags)
+    else
+      Dependency.new(spec, tags)
+    end
+  end
+
+  def parse_symbol_spec(spec, tags)
     case spec
-    when :autoconf, :automake, :bsdmake, :libtool, :libltdl
+    when :autoconf, :automake, :bsdmake, :libtool
       # Xcode no longer provides autotools or some other build tools
-      autotools_dep(spec, tag)
-    when :x11        then X11Dependency.new(spec.to_s, tag)
-    when *X11Dependency::Proxy::PACKAGES
-      x11_dep(spec, tag)
-    when :cairo, :pixman
-      # We no longer use X11 psuedo-deps for cairo or pixman,
-      # so just return a standard formula dependency.
-      Dependency.new(spec.to_s, tag)
-    when :xcode      then XcodeDependency.new(tag)
-    when :mysql      then MysqlDependency.new(tag)
-    when :postgresql then PostgresqlDependency.new(tag)
-    when :tex        then TeXDependency.new(tag)
-    when :clt        then CLTDependency.new(tag)
-    when :arch       then ArchRequirement.new(tag)
-    when :hg         then MercurialDependency.new(tag)
+      autotools_dep(spec, tags)
+    when :x11        then X11Dependency.new(spec.to_s, tags)
+    when :xcode      then XcodeDependency.new(tags)
+    when :macos      then MinimumMacOSRequirement.new(tags)
+    when :mysql      then MysqlDependency.new(tags)
+    when :postgresql then PostgresqlDependency.new(tags)
+    when :fortran    then FortranDependency.new(tags)
+    when :mpi        then MPIDependency.new(*tags)
+    when :tex        then TeXDependency.new(tags)
+    when :arch       then ArchRequirement.new(tags)
+    when :hg         then MercurialDependency.new(tags)
+    # python2 is deprecated
+    when :python, :python2 then PythonDependency.new(tags)
+    when :python3    then Python3Dependency.new(tags)
+    when :java       then JavaDependency.new(tags)
+    when :osxfuse    then OsxfuseDependency.new(tags)
+    # Tiger's ld is too old to properly link some software
+    when :ld64       then LD64Dependency.new if MacOS.version < :leopard
+    when :ant        then ant_dep(spec, tags)
+    when :clt # deprecated
+    when :cairo, :fontconfig, :freetype, :libpng, :pixman # deprecated
+      Dependency.new(spec.to_s, tags)
+    when :libltdl # deprecated
+      tags << :run
+      Dependency.new("libtool", tags)
     else
-      raise "Unsupported special dependency #{spec}"
+      raise ArgumentError, "Unsupported special dependency #{spec.inspect}"
     end
   end
 
-  def x11_dep(spec, tag)
-    if MacOS.version >= :mountain_lion
-      Dependency.new(spec.to_s, tag)
+  def parse_class_spec(spec, tags)
+    if spec < Requirement
+      spec.new(tags)
     else
-      X11Dependency::Proxy.for(spec.to_s, tag)
+      raise TypeError, "#{spec.inspect} is not a Requirement subclass"
     end
   end
 
-  def autotools_dep(spec, tag)
-    case spec
-    when :libltdl then spec, tag = :libtool, Array(tag)
-    else tag = Array(tag) << :build
-    end
+  def autotools_dep(spec, tags)
+    tags << :build unless tags.include? :run
+    Dependency.new(spec.to_s, tags)
+  end
 
-    unless MacOS::Xcode.provides_autotools?
-      Dependency.new(spec.to_s, tag)
+  def ant_dep(spec, tags)
+    if MacOS.version >= :mavericks
+      Dependency.new(spec.to_s, tags)
+    end
+  end
+
+  def resource_dep(spec, tags)
+    tags << :build
+    strategy = spec.download_strategy
+
+    case
+    when strategy <= CurlDownloadStrategy
+      parse_url_spec(spec.url, tags)
+    when strategy <= GitDownloadStrategy
+      GitDependency.new(tags)
+    when strategy <= MercurialDownloadStrategy
+      MercurialDependency.new(tags)
+    when strategy <= FossilDownloadStrategy
+      Dependency.new("fossil", tags)
+    when strategy <= BazaarDownloadStrategy
+      Dependency.new("bazaar", tags)
+    when strategy <= CVSDownloadStrategy
+      Dependency.new("cvs", tags) if MacOS.version >= :mavericks || !MacOS::Xcode.provides_cvs?
+    when strategy < AbstractDownloadStrategy
+      # allow unknown strategies to pass through
+    else
+      raise TypeError,
+        "#{strategy.inspect} is not an AbstractDownloadStrategy subclass"
+    end
+  end
+
+  def parse_url_spec(url, tags)
+    case File.extname(url)
+    when '.xz'  then Dependency.new('xz', tags)
+    when '.lz'  then Dependency.new('lzip', tags)
+    when '.rar' then Dependency.new('unrar', tags)
+    when '.7z'  then Dependency.new('p7zip', tags)
     end
   end
 end

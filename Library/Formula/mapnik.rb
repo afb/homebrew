@@ -1,53 +1,51 @@
-require 'formula'
+require "formula"
 
 class Mapnik < Formula
-  homepage 'http://www.mapnik.org/'
-  url 'https://github.com/downloads/mapnik/mapnik/mapnik-v2.1.0.tar.bz2'
-  sha1 'b1c6a138e65a5e20f0f312a559e2ae7185adf5b6'
+  homepage "http://www.mapnik.org/"
+  head "https://github.com/mapnik/mapnik.git"
+  url "http://mapnik.s3.amazonaws.com/dist/v2.2.0/mapnik-v2.2.0.tar.bz2"
+  sha1 "e493ad87ca83471374a3b080f760df4b25f7060d"
+  revision 2
 
-  # batch for building against boost >1.52
-  # can be removed at Mapnik >= 2.1.1
-  # https://github.com/mapnik/mapnik/issues/1716
-  def patches
-    DATA
+  bottle do
+    sha1 "dc73959a75ce5dd11e7b03e50b5215179650b768" => :mavericks
+    sha1 "4ff3aa06da7b8e6788a5e996732ea4dfbf321085" => :mountain_lion
+    sha1 "882cce36e29cea17f3cdb40805e9c7245a747f98" => :lion
   end
 
-  head 'https://github.com/mapnik/mapnik.git'
+  # can be removed at Mapnik > 2.2.0
+  # https://github.com/mapnik/mapnik/issues/1973
+  patch :DATA
 
-  depends_on 'pkg-config' => :build
-  depends_on :libtool
-  depends_on :freetype
-  depends_on :libpng
-  depends_on 'libtiff'
-  depends_on 'proj'
-  depends_on 'icu4c'
-  depends_on 'jpeg'
-  depends_on 'boost'
-  depends_on 'gdal' => :optional
-  depends_on 'geos' => :optional
-  depends_on 'cairo' => :optional
+  depends_on "pkg-config" => :build
+  depends_on "freetype"
+  depends_on "libpng"
+  depends_on "libtiff"
+  depends_on "proj"
+  depends_on "icu4c"
+  depends_on "jpeg"
+  depends_on "boost" => "with-python"
+  depends_on "gdal" => :optional
+  depends_on "postgresql" => :optional
+  depends_on "cairo" => :optional
 
-  if build.with? 'cairo'
-    depends_on 'py2cairo'
-    depends_on 'cairomm'
-  end
+  depends_on "py2cairo" if build.with? "cairo"
 
   def install
-    icu = Formula.factory("icu4c").opt_prefix
-    boost = Formula.factory('boost').opt_prefix
-    proj = Formula.factory('proj').opt_prefix
-    jpeg = Formula.factory('jpeg').opt_prefix
-    libtiff = Formula.factory('libtiff').opt_prefix
-    cairo = Formula.factory('cairo').opt_prefix if build.with? 'cairo'
+    icu = Formula["icu4c"].opt_prefix
+    boost = Formula["boost"].opt_prefix
+    proj = Formula["proj"].opt_prefix
+    jpeg = Formula["jpeg"].opt_prefix
+    libpng = Formula["libpng"].opt_prefix
+    libtiff = Formula["libtiff"].opt_prefix
+    freetype = Formula["freetype"].opt_prefix
 
     # mapnik compiles can take ~1.5 GB per job for some .cpp files
     # so lets be cautious by limiting to CPUS/2
     jobs = ENV.make_jobs.to_i
     jobs /= 2 if jobs > 2
 
-    args = [ "scons/scons.py",
-             "configure",
-             "CC=\"#{ENV.cc}\"",
+    args = [ "CC=\"#{ENV.cc}\"",
              "CXX=\"#{ENV.cxx}\"",
              "JOBS=#{jobs}",
              "PREFIX=#{prefix}",
@@ -56,59 +54,45 @@ class Mapnik < Formula
              "PYTHON_PREFIX=#{prefix}",  # Install to Homebrew's site-packages
              "JPEG_INCLUDES=#{jpeg}/include",
              "JPEG_LIBS=#{jpeg}/lib",
+             "PNG_INCLUDES=#{libpng}/include",
+             "PNG_LIBS=#{libpng}/lib",
              "TIFF_INCLUDES=#{libtiff}/include",
              "TIFF_LIBS=#{libtiff}/lib",
              "BOOST_INCLUDES=#{boost}/include",
              "BOOST_LIBS=#{boost}/lib",
              "PROJ_INCLUDES=#{proj}/include",
-             "PROJ_LIBS=#{proj}/lib" ]
+             "PROJ_LIBS=#{proj}/lib",
+             "FREETYPE_CONFIG=#{freetype}/bin/freetype-config"
+           ]
 
-    if build.with? 'cairo'
+    if build.with? "cairo"
       args << "CAIRO=True" # cairo paths will come from pkg-config
     else
       args << "CAIRO=False"
     end
-    args << "GEOS_CONFIG=#{Formula.factory('geos').opt_prefix}/bin/geos-config" if build.with? 'geos'
-    args << "GDAL_CONFIG=#{Formula.factory('gdal').opt_prefix}/bin/gdal-config" if build.with? 'gdal'
+    args << "GDAL_CONFIG=#{Formula["gdal"].opt_bin}/gdal-config" if build.with? "gdal"
+    args << "PG_CONFIG=#{Formula["postgresql"].opt_bin}/pg_config" if build.with? "postgresql"
 
-    system "python", *args
-
-    system "python",
-           "scons/scons.py",
-           "install"
-  end
-
-  def caveats; <<-EOS.undent
-    For non-homebrew Python, you need to amend your PYTHONPATH like so:
-      export PYTHONPATH=#{HOMEBREW_PREFIX}/lib/#{which_python}/site-packages:$PYTHONPATH
-    EOS
-  end
-
-  def which_python
-    "python" + `python -c 'import sys;print(sys.version[:3])'`.strip
+    system "python", "scons/scons.py", "configure", *args
+    system "python", "scons/scons.py", "install"
   end
 end
 
 __END__
-diff --git a/src/json/feature_collection_parser.cpp b/src/json/feature_collection_parser.cpp
-index 3faeda7..51ad824 100644
---- a/src/json/feature_collection_parser.cpp
-+++ b/src/json/feature_collection_parser.cpp
-@@ -20,12 +20,17 @@
-  *
-  *****************************************************************************/
+diff --git a/bindings/python/mapnik_text_placement.cpp b/bindings/python/mapnik_text_placement.cpp
+index 0520132..4897c28 100644
+--- a/bindings/python/mapnik_text_placement.cpp
++++ b/bindings/python/mapnik_text_placement.cpp
+@@ -194,7 +194,11 @@ struct ListNodeWrap: formatting::list_node, wrapper<formatting::list_node>
+     ListNodeWrap(object l) : formatting::list_node(), wrapper<formatting::list_node>()
+     {
+         stl_input_iterator<formatting::node_ptr> begin(l), end;
+-        children_.insert(children_.end(), begin, end);
++        while (begin != end)
++        {
++            children_.push_back(*begin);
++            ++begin;
++        }
+     }
 
-+// TODO https://github.com/mapnik/mapnik/issues/1658
-+#include <boost/version.hpp>
-+#if BOOST_VERSION >= 105200
-+#define BOOST_SPIRIT_USE_PHOENIX_V3
-+#endif
-+
- // mapnik
- #include <mapnik/json/feature_collection_parser.hpp>
- #include <mapnik/json/feature_collection_grammar.hpp>
-
- // boost
--#include <boost/version.hpp>
- #include <boost/spirit/include/qi.hpp>
- #include <boost/spirit/include/support_multi_pass.hpp>
+     /* TODO: Add constructor taking variable number of arguments.

@@ -2,27 +2,33 @@ require 'formula'
 
 class GnuSmalltalk < Formula
   homepage 'http://smalltalk.gnu.org/'
-  url 'http://ftpmirror.gnu.org/smalltalk/smalltalk-3.2.4.tar.xz'
-  mirror 'http://ftp.gnu.org/gnu/smalltalk/smalltalk-3.2.4.tar.xz'
-  sha1 '75b7077a02abb2ec01c5975e22d6138b541db38e'
+  url 'http://ftpmirror.gnu.org/smalltalk/smalltalk-3.2.5.tar.xz'
+  mirror 'http://ftp.gnu.org/gnu/smalltalk/smalltalk-3.2.5.tar.xz'
+  sha1 '0eb5895b9b5bebe4f75308efbe34f8721fc2fd6b'
+  revision 1
+
+  devel do
+    url 'ftp://alpha.gnu.org/gnu/smalltalk/smalltalk-3.2.90.tar.gz'
+    sha1 'dd8bba5702591f0d5e2676878e1b3ee48f0ff37f'
+  end
 
   head 'https://github.com/bonzini/smalltalk.git'
 
   option 'tests', 'Verify the build with make check (this may hang)'
   option 'tcltk', 'Build the Tcl/Tk module that requires X11'
 
-  # Need newer versions on Snow Leopard
+  depends_on 'autoconf' => :build
   depends_on 'automake' => :build
   depends_on 'libtool' => :build
 
   depends_on 'pkg-config' => :build
-  depends_on 'xz'         => :build
   depends_on 'gawk'       => :build
   depends_on 'readline'   => :build
   depends_on 'libffi'     => :recommended
   depends_on 'libsigsegv' => :recommended
   depends_on 'glew'       => :optional
   depends_on :x11 if build.include? 'tcltk'
+  depends_on 'gnutls'
 
   fails_with :llvm do
     build 2334
@@ -37,7 +43,7 @@ class GnuSmalltalk < Formula
       --disable-dependency-tracking
       --prefix=#{prefix}
       --disable-gtk
-      --with-readline=#{Formula.factory('readline').lib}
+      --with-readline=#{Formula['readline'].lib}
     ]
     unless build.include? 'tcltk'
       args << '--without-tcl' << '--without-tk' << '--without-x'
@@ -48,15 +54,19 @@ class GnuSmalltalk < Formula
       args << "--disable-generational-gc"
     end
 
-    # Compatibility with Automake 1.13+, fixed upstream
-    inreplace %w{configure.ac sigsegv/configure.ac},
-      'AM_CONFIG_HEADER', 'AC_CONFIG_HEADERS'
-    inreplace 'snprintfv/configure.ac', 'AM_PROG_CC_STD', ''
-
     system 'autoreconf', '-ivf'
     system "./configure", *args
     system "make"
     system 'make', '-j1', 'check' if build.include? 'tests'
     system "make install"
+  end
+
+  test do
+    path = testpath/"test.gst"
+    path.write "0 to: 9 do: [ :n | n display ]\n"
+
+    output = `#{bin}/gst #{path}`.strip
+    assert_equal "0123456789", output
+    assert_equal 0, $?.exitstatus
   end
 end

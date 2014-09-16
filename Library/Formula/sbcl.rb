@@ -1,22 +1,16 @@
-require 'formula'
-
-class SbclBootstrapBinaries < Formula
-  url 'http://downloads.sourceforge.net/project/sbcl/sbcl/1.1.0/sbcl-1.1.0-x86-64-darwin-binary.tar.bz2'
-  sha1 'ed2069e124027c43926728c48d604efbb4e33950'
-  version "1.1.0"
-end
+require "formula"
 
 class Sbcl < Formula
-  homepage 'http://www.sbcl.org/'
-  url 'http://downloads.sourceforge.net/project/sbcl/sbcl/1.1.4/sbcl-1.1.4-source.tar.bz2'
-  sha1 '57c1055821e4ad1c9c1b2b75fa972c5ae7ca86d0'
+  homepage "http://www.sbcl.org/"
+  url "https://downloads.sourceforge.net/project/sbcl/sbcl/1.2.2/sbcl-1.2.2-source.tar.bz2"
+  sha1 "23449d376ac0b6112ad468adc11a5e521667d8fd"
 
-  head 'git://sbcl.git.sourceforge.net/gitroot/sbcl/sbcl.git'
+  head "git://sbcl.git.sourceforge.net/gitroot/sbcl/sbcl.git"
 
   bottle do
-    sha1 'f3a56af6651fad229616ce0ad182fa4829b1c0f2' => :mountain_lion
-    sha1 'cec671e27e8a23ff8b9c6f8d15549a7cfc688bcb' => :lion
-    sha1 'f148420a1d44f0a8e5fe56ac57639fe6421a22c3' => :snow_leopard
+    sha1 "aedcdd2e3e4ec477cb140c58ba461102fd548bfb" => :mavericks
+    sha1 "aaeb881100107fb03813cf41dc65de04e2aa50f4" => :mountain_lion
+    sha1 "ca2d16c6e5b7af262d69b63415784fd4c6a9b288" => :lion
   end
 
   fails_with :llvm do
@@ -26,23 +20,48 @@ class Sbcl < Formula
 
   option "32-bit"
   option "without-threads", "Build SBCL without support for native threads"
+  option "without-core-compression", "Build SBCL without support for compressed cores and without a dependency on zlib"
   option "with-ldb", "Include low-level debugger in the build"
   option "with-internal-xref", "Include XREF information for SBCL internals (increases core size by 5-6MB)"
 
-  def patches
-    { :p0 => [
-        "https://trac.macports.org/export/88830/trunk/dports/lang/sbcl/files/patch-base-target-features.diff",
-        "https://trac.macports.org/export/88830/trunk/dports/lang/sbcl/files/patch-make-doc.diff",
-        "https://trac.macports.org/export/88830/trunk/dports/lang/sbcl/files/patch-posix-tests.diff",
-        "https://trac.macports.org/export/88830/trunk/dports/lang/sbcl/files/patch-use-mach-exception-handler.diff"
-    ]}
+  # Current binary versions are listed at http://sbcl.sourceforge.net/platform-table.html
+
+  resource "bootstrap64" do
+    url "https://downloads.sourceforge.net/project/sbcl/sbcl/1.1.8/sbcl-1.1.8-x86-64-darwin-binary.tar.bz2"
+    sha1 "cffd8c568588f48bd0c69295a385b662d27983cf"
+  end
+
+  resource "bootstrap32" do
+    url "https://downloads.sourceforge.net/project/sbcl/sbcl/1.1.6/sbcl-1.1.6-x86-darwin-binary.tar.bz2"
+    sha1 "35a76b93f8714bc34ba127df4aaf69aacfc08164"
+  end
+
+  patch :p0 do
+    url "https://trac.macports.org/export/88830/trunk/dports/lang/sbcl/files/patch-base-target-features.diff"
+    sha1 "49cf79e8d687e0a90db0fdc022a5f73181629d6e"
+  end
+
+  patch :p0 do
+    url "https://trac.macports.org/export/88830/trunk/dports/lang/sbcl/files/patch-make-doc.diff"
+    sha1 "65d0beec43707ff5bf3262b8f12ca4514e58ce15"
+  end
+
+  patch :p0 do
+    url "https://trac.macports.org/export/88830/trunk/dports/lang/sbcl/files/patch-posix-tests.diff"
+    sha1 "cde8db247d153c6272cc96a6716721fd623010cb"
+  end
+
+  patch :p0 do
+    url "https://trac.macports.org/export/88830/trunk/dports/lang/sbcl/files/patch-use-mach-exception-handler.diff"
+    sha1 "4d08e56e7e261db47ffdfef044149b001e6cd7c1"
   end
 
   def write_features
     features = []
-    features << ":sb-thread" unless build.include? "without-threads"
-    features << ":sb-ldb" if build.include? "with-ldb"
-    features << ":sb-xref-for-internals" if build.include? "with-internal-xref"
+    features << ":sb-thread" if build.with? "threads"
+    features << ":sb-core-compression" if build.with? "core-compression"
+    features << ":sb-ldb" if build.with? "ldb"
+    features << ":sb-xref-for-internals" if build.with? "internal-xref"
 
     File.open("customize-target-features.lisp", "w") do |file|
       file.puts "(lambda (list)"
@@ -62,27 +81,30 @@ class Sbcl < Formula
       value =~ /[\x80-\xff]/n
     end
 
-    SbclBootstrapBinaries.new.brew do
+    bootstrap = (build.build_32_bit? || !MacOS.prefer_64_bit?) ? "bootstrap32" : "bootstrap64"
+    resource(bootstrap).stage do
       # We only need the binaries for bootstrapping, so don't install anything:
-      command = Dir.pwd + "/src/runtime/sbcl"
-      core = Dir.pwd + "/output/sbcl.core"
+      command = "#{Dir.pwd}/src/runtime/sbcl"
+      core = "#{Dir.pwd}/output/sbcl.core"
       xc_cmdline = "#{command} --core #{core} --disable-debugger --no-userinit --no-sysinit"
 
       cd buildpath do
-        ENV['SBCL_ARCH'] = 'x86' if build.build_32_bit?
+        ENV["SBCL_ARCH"] = "x86" if build.build_32_bit?
+        Pathname.new("version.lisp-expr").write('"1.0.99.999"') if build.head?
         system "./make.sh", "--prefix=#{prefix}", "--xc-host=#{xc_cmdline}"
       end
     end
 
-    ENV['INSTALL_ROOT'] = prefix
+    ENV["INSTALL_ROOT"] = prefix
     system "sh install.sh"
   end
 
-  def caveats; <<-EOS.undent
-    If you are upgrading sbcl and you have installed maxima,
-    you have to reinstall maxima:
-
-      brew rm maxima && brew install maxima
+  test do
+    (testpath/'simple.sbcl').write <<-EOS.undent
+      (write-line (write-to-string (+ 2 2)))
     EOS
+    output = `'#{bin}/sbcl' --script #{testpath}/simple.sbcl`
+    assert_equal '4', output.strip
+    assert_equal 0, $?.exitstatus
   end
 end

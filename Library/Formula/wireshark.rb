@@ -1,40 +1,85 @@
-require 'formula'
+require "formula"
 
 class Wireshark < Formula
-  homepage 'http://www.wireshark.org'
-  url 'http://www.wireshark.org/download/src/wireshark-1.8.6.tar.bz2'
-  sha1 '0f51ed901b5e07cceb1373f3368f739be8f1e827'
+  homepage "http://www.wireshark.org"
+  revision 1
 
-  option 'with-x', 'Include X11 support'
-  option 'with-python', 'Enable experimental Python bindings'
+  stable do
+    url "http://wiresharkdownloads.riverbed.com/wireshark/src/all-versions/wireshark-1.12.0.tar.bz2"
+    mirror "http://www.wireshark.org/download/src/all-versions/wireshark-1.12.0.tar.bz2"
+    sha1 "c7a94a9ec90c1ff9be2a7d7b813276e433509df9"
 
-  depends_on 'pkg-config' => :build
-  depends_on 'gnutls2' => :optional
-  depends_on 'libgcrypt' => :optional
-  depends_on 'c-ares' => :optional
-  depends_on 'pcre' => :optional
-  depends_on 'glib'
-
-  if build.with? 'x'
-    depends_on :x11
-    depends_on 'gtk+'
+    # Removes SDK checks that prevent the build from working on CLT-only systems
+    # Reported upstream: https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=9290
+    patch :DATA
   end
 
+  bottle do
+    sha1 "c358f63d065e79c1bc95d9743686a0ba2ffb56d2" => :mavericks
+    sha1 "3beac5fc1a4ad062a29a105bd2f30fb7761cf698" => :mountain_lion
+    sha1 "e7b9eb2d8fefaf9c88fa23edf232a836794bfb11" => :lion
+  end
+
+  head do
+    url "https://code.wireshark.org/review/wireshark", :using => :git
+
+    depends_on "autoconf" => :build
+    depends_on "automake" => :build
+    depends_on "libtool" => :build
+  end
+
+  option "with-qt", "Use QT for GUI instead of GTK+3"
+  option "with-headers", "Install Wireshark library headers for plug-in developemnt"
+
+  depends_on "pkg-config" => :build
+
+  depends_on "glib"
+  depends_on "gnutls"
+  depends_on "libgcrypt"
+
+  depends_on "geoip" => :recommended
+
+  depends_on "c-ares" => :optional
+  depends_on "lua" => :optional
+  depends_on "pcre" => :optional
+  depends_on "portaudio" => :optional
+  depends_on "qt" => :optional
+  depends_on "gtk+3" => :optional
+  depends_on "gtk+" => :optional
+
   def install
-    args = ["--disable-dependency-tracking", "--prefix=#{prefix}"]
+    args = ["--disable-dependency-tracking",
+            "--prefix=#{prefix}",
+            "--with-gnutls",
+            "--with-ssl"]
 
-    # Optionally enable experimental python bindings; is known to cause
-    # some runtime issues, e.g.
-    # "dlsym(0x8fe467fc, py_create_dissector_handle): symbol not found"
-    args << '--without-python' unless build.with? 'python'
+    args << "--disable-wireshark" if build.without?("gtk+3") && build.without?("qt") && build.without?("gtk+")
+    args << "--disable-gtktest" if build.without?("gtk+3") && build.without?("gtk+")
+    args << "--with-qt" if build.with? "qt"
+    args << "--with-gtk3" if build.with? "gtk+3"
+    args << "--with-gtk2" if build.with? "gtk+"
 
-    # actually just disables the GTK GUI
-    args << '--disable-wireshark' unless build.with? 'x'
+    if build.head?
+      args << "--disable-warnings-as-errors"
+      system "./autogen.sh"
+    end
 
     system "./configure", *args
     system "make"
     ENV.deparallelize # parallel install fails
     system "make install"
+
+    if build.with? "headers"
+      (include/"wireshark").install Dir["*.h"]
+      (include/"wireshark/epan").install Dir["epan/*.h"]
+      (include/"wireshark/epan/crypt").install Dir["epan/crypt/*.h"]
+      (include/"wireshark/epan/dfilter").install Dir["epan/dfilter/*.h"]
+      (include/"wireshark/epan/dissectors").install Dir["epan/dissectors/*.h"]
+      (include/"wireshark/epan/ftypes").install Dir["epan/ftypes/*.h"]
+      (include/"wireshark/epan/wmem").install Dir["epan/wmem/*.h"]
+      (include/"wireshark/wiretap").install Dir["wiretap/*.h"]
+      (include/"wireshark/wsutil").install Dir["wsutil/*.h"]
+    end
   end
 
   def caveats; <<-EOS.undent
@@ -54,4 +99,60 @@ class Wireshark < Formula
       https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=3760
     EOS
   end
+
+  test do
+    system "#{bin}/randpkt", "-b", "100", "-c", "2", "capture.pcap"
+    output = shell_output("#{bin}/capinfos -Tmc capture.pcap")
+    assert_equal "File name,Number of packets\ncapture.pcap,2\n", output
+  end
 end
+
+__END__
+diff --git a/configure b/configure
+index cd41b63..c473fe7 100755
+--- a/configure
++++ b/configure
+@@ -16703,42 +16703,12 @@ $as_echo "yes" >&6; }
+ 				break
+ 			fi
+ 		done
+-		if test -z "$SDKPATH"
+-		then
+-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+-$as_echo "no" >&6; }
+-			as_fn_error $? "We couldn't find the SDK for OS X $deploy_target" "$LINENO" 5
+-		fi
+ 		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+ $as_echo "yes" >&6; }
+ 		;;
+ 	esac
+
+ 	#
+-	# Add a -mmacosx-version-min flag to force tests that
+-	# use the compiler, as well as the build itself, not to,
+-	# for example, use compiler or linker features not supported
+-	# by the minimum targeted version of the OS.
+-	#
+-	# Add an -isysroot flag to use the SDK.
+-	#
+-	CFLAGS="-mmacosx-version-min=$deploy_target -isysroot $SDKPATH $CFLAGS"
+-	CXXFLAGS="-mmacosx-version-min=$deploy_target -isysroot $SDKPATH $CXXFLAGS"
+-	LDFLAGS="-mmacosx-version-min=$deploy_target -isysroot $SDKPATH $LDFLAGS"
+-
+-	#
+-	# Add a -sdkroot flag to use with osx-app.sh.
+-	#
+-	OSX_APP_FLAGS="-sdkroot $SDKPATH"
+-
+-	#
+-	# XXX - do we need this to build the Wireshark wrapper?
+-	# XXX - is this still necessary with the -mmacosx-version-min
+-	# flag being set?
+-	#
+-	OSX_DEPLOY_TARGET="MACOSX_DEPLOYMENT_TARGET=$deploy_target"
+-
+-	#
+ 	# In the installer package XML file, give the deployment target
+ 	# as the minimum version.
+ 	#
+

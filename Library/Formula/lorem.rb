@@ -10,4 +10,8 @@ class Lorem < Formula
     inreplace "lorem", "!/usr/bin/python", "!/usr/bin/env python"
     bin.install "lorem"
   end
+
+  test do
+    assert_equal "lorem ipsum", shell_output("#{bin}/lorem -n 2").strip
+  end
 end

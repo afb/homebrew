@@ -1,26 +1,25 @@
 require 'formula'
 
 class Minizinc < Formula
-  homepage 'http://www.g12.csse.unimelb.edu.au/minizinc/'
-  url 'http://www.g12.csse.unimelb.edu.au/minizinc/downloads/release-1.6/minizinc-1.6-x86_64-apple-darwin.tar.gz'
+  homepage 'http://www.minizinc.org'
+  url 'http://www.minizinc.org/downloads/release-1.6/minizinc-1.6-x86_64-apple-darwin.tar.gz'
   sha1 '71f0e08962eb8bb44c463851f0144c8b006fdb80'
 
   depends_on :arch => :x86_64
 
-  def patches
-    # remove echoed recommendations about linking directories
-    # add installation location as parameter of SETUP script
-    DATA
-  end
+  # remove echoed recommendations about linking directories
+  # add installation location as parameter of SETUP script
+  patch :DATA
 
   def install
-    system "sh", "SETUP", prefix
-    bin.install Dir['bin/*']
+    system "sh", "SETUP", libexec
     man.install Dir['doc/man/*']
-    lib.install Dir['lib/*']
+    libexec.install 'bin', 'lib'
+    bin.install_symlink Dir["#{libexec}/bin/*"]
+    (bin/'private').unlink
   end
 
-  def test
+  test do
     system "#{bin}/mzn2fzn", "--help"
   end
 end

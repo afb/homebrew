@@ -1,18 +1,27 @@
-require 'formula'
+require "formula"
 
-# Stick with 0.10; PostGIS doesn't build against 0.11
 class JsonC < Formula
-  homepage 'https://github.com/json-c/json-c/wiki'
-  url 'https://github.com/downloads/json-c/json-c/json-c-0.10.tar.gz'
-  sha1 'f90f643c8455da21d57b3e8866868a944a93c596'
+  homepage "https://github.com/json-c/json-c/wiki"
+  url "https://github.com/json-c/json-c/archive/json-c-0.11-20130402.tar.gz"
+  version "0.11"
+  sha1 "1910e10ea57a743ec576688700df4a0cabbe64ba"
+
+  bottle do
+    cellar :any
+    revision 1
+    sha1 "937cec063a3ad30b7c806c59b2c605c21b47fbb4" => :mavericks
+    sha1 "e1a3bdda78ce63c746582f58548da7a04a6baff1" => :mountain_lion
+    sha1 "789f81ff4f5b7f5a1bbb971841496af8cd61c449" => :lion
+  end
+
+  option :universal
 
   def install
+    ENV.universal_binary if build.universal?
+
     system "./configure", "--disable-dependency-tracking",
                           "--prefix=#{prefix}"
+    ENV.deparallelize
     system "make install"
-
-    # The Makefile forgets to install this header. This is fixed upstream and
-    # can be pulled on the next release.
-    (include/'json').install 'json_object_iterator.h'
   end
 end

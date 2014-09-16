@@ -2,13 +2,11 @@ require 'formula'
 
 class Plowshare < Formula
   homepage 'http://code.google.com/p/plowshare/'
-  url 'http://plowshare.googlecode.com/files/plowshare-snapshot-git20120930.tar.gz'
-  sha1 'd8272d2a325764f855d77158e0ed35e70d9d1968'
-
+  url 'https://code.google.com/p/plowshare/', :tag => 'v1.0.5', :using => :git
   head 'https://code.google.com/p/plowshare/', :using => :git
 
   depends_on 'recode'
-  depends_on 'imagemagick'
+  depends_on 'imagemagick' => 'with-x11'
   depends_on 'tesseract'
   depends_on 'spidermonkey'
   depends_on 'aview'
@@ -16,25 +14,19 @@ class Plowshare < Formula
   depends_on 'gnu-sed'
   depends_on 'gnu-getopt'
 
-  def patches
-    DATA
-  end
+  patch :DATA
 
   def install
-    ENV["PREFIX"] = prefix
-    system "bash setup.sh install"
+    system "make", "install", "PREFIX=#{prefix}"
   end
 
   def caveats; <<-EOS.undent
-    The default installation of imagemagick does not enable
-    X11 support. plowshare uses the display command which does
-    not work if X11 support is not enabled. To enable:
-      brew remove imagemagick
-      brew install imagemagick --with-x
+    Plowshare 4 requires Bash 4+. OS X ships with an old Bash 3 version.
+    To install Bash 4:
+      brew install bash
     EOS
   end
 end
-
 
 # This patch makes sure GNUtools are used on OSX.
 # gnu-getopt is keg-only hence the backtick expansion.
@@ -46,7 +38,7 @@ __END__
 --- a/src/core.sh
 +++ b/src/core.sh
 @@ -1,4 +1,8 @@
- #!/bin/bash
+ #!/usr/bin/env bash
 +shopt -s expand_aliases
 +alias sed='gsed'
 +alias getopt='`brew --prefix gnu-getopt`/bin/getopt'

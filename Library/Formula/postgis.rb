@@ -2,13 +2,15 @@ require 'formula'
 
 class Postgis < Formula
   homepage 'http://postgis.net'
-  url 'http://download.osgeo.org/postgis/source/postgis-2.0.3.tar.gz'
-  sha1 '825c1718cf2603fa0f1c2de802989dff7239f9bc'
+  url 'http://download.osgeo.org/postgis/source/postgis-2.1.3.tar.gz'
+  sha256 'c17812aa4bb86ed561dfc65cb42ab45176b94e0620de183a4bbd773d6d876ec1'
 
   head 'http://svn.osgeo.org/postgis/trunk/'
 
   option 'with-gui', 'Build shp2pgsql-gui in addition to command line tools'
+  option 'without-gdal', 'Disable postgis raster support'
 
+  depends_on :autoconf
   depends_on :automake
   depends_on :libtool
 
@@ -17,23 +19,20 @@ class Postgis < Formula
   depends_on 'proj'
   depends_on 'geos'
 
-  depends_on 'gtk+' if build.include? 'with-gui'
+  depends_on 'gtk+' if build.with? "gui"
 
   # For GeoJSON and raster handling
   depends_on 'json-c'
-  depends_on 'gdal'
+  depends_on 'gdal' => :recommended
 
-  def postgres_realpath
-    # Follow the PostgreSQL linked keg back to the active Postgres installation
-    # as it is common for people to avoid upgrading Postgres.
-    Formula.factory('postgresql').opt_prefix.realpath
-  end
-
-  # Force GPP to be used when pre-processing SQL files. See:
-  #   http://trac.osgeo.org/postgis/ticket/1694
-  def patches; DATA end
+  # For advanced 2D/3D functions
+  depends_on 'sfcgal' => :recommended
 
   def install
+    # Follow the PostgreSQL linked keg back to the active Postgres installation
+    # as it is common for people to avoid upgrading Postgres.
+    postgres_realpath = Formula["postgresql"].opt_prefix.realpath
+
     ENV.deparallelize
 
     args = [
@@ -41,7 +40,7 @@ class Postgis < Formula
       # Can't use --prefix, PostGIS disrespects it and flat-out refuses to
       # accept it with 2.0.
       "--with-projdir=#{HOMEBREW_PREFIX}",
-      "--with-jsondir=#{Formula.factory('json-c').opt_prefix}",
+      "--with-jsondir=#{Formula["json-c"].opt_prefix}",
       # This is against Homebrew guidelines, but we have to do it as the
       # PostGIS plugin libraries can only be properly inserted into Homebrew's
       # Postgresql keg.
@@ -52,8 +51,9 @@ class Postgis < Formula
       # gettext installations are.
       "--disable-nls"
     ]
-    args << '--with-gui' if build.include? 'with-gui'
+    args << '--with-gui' if build.with? "gui"
 
+    args << '--without-raster' if build.without? "gdal"
 
     system './autogen.sh'
     system './configure', *args
@@ -81,7 +81,7 @@ class Postgis < Formula
     include.install Dir['stage/**/include/*']
 
     # Stand-alone SQL files will be installed the share folder
-    (share + 'postgis').install Dir['stage/**/contrib/postgis-2.0/*']
+    (share/'postgis').install Dir['stage/**/contrib/postgis-2.1/*']
 
     # Extension scripts
     bin.install %w[
@@ -99,45 +99,21 @@ class Postgis < Formula
   end
 
   def caveats;
+    pg = Formula["postgresql"].opt_prefix
     <<-EOS.undent
       To create a spatially-enabled database, see the documentation:
-        http://postgis.refractions.net/documentation/manual-2.0/postgis_installation.html#create_new_db_extensions
-      and to upgrade your existing spatial databases, see here:
-        http://postgis.refractions.net/documentation/manual-2.0/postgis_installation.html#upgrading
+        http://postgis.net/docs/manual-2.1/postgis_installation.html#create_new_db_extensions
+      If you are currently using PostGIS 2.0+, you can go the soft upgrade path:
+        ALTER EXTENSION postgis UPDATE TO "2.1.3";
+      Users of 1.5 and below will need to go the hard-upgrade path, see here:
+        http://postgis.net/docs/manual-2.1/postgis_installation.html#upgrading
 
       PostGIS SQL scripts installed to:
         #{HOMEBREW_PREFIX}/share/postgis
       PostGIS plugin libraries installed to:
-        #{pg = Formula.factory('postgresql').opt_prefix}/lib
+        #{pg}/lib
       PostGIS extension modules installed to:
         #{pg}/share/postgresql/extension
       EOS
   end
 end
-__END__
-Force usage of GPP as the SQL pre-processor as Clang chokes.
-
-diff --git a/configure.ac b/configure.ac
-index 136a1d6..c953c69 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -31,17 +31,8 @@ AC_SUBST([ANT])
- dnl
- dnl SQL Preprocessor
- dnl
--AC_PATH_PROG([CPPBIN], [cpp], [])
--if test "x$CPPBIN" != "x"; then
--  SQLPP="${CPPBIN} -traditional-cpp -P"
--else
--  AC_PATH_PROG([GPP], [gpp_], [])
--  if test "x$GPP" != "x"; then
--    SQLPP="${GPP} -C -s \'" dnl Use better string support
--  else
--    SQLPP="${CPP} -traditional-cpp"
--  fi
--fi
-+AC_PATH_PROG([GPP], [gpp], [])
-+SQLPP="${GPP} -C -s \'" dnl Use better string support
- AC_SUBST([SQLPP])
- 
- dnl

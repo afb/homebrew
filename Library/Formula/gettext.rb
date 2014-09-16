@@ -1,29 +1,20 @@
-require 'formula'
+require "formula"
 
 class Gettext < Formula
-  homepage 'http://www.gnu.org/software/gettext/'
-  url 'http://ftpmirror.gnu.org/gettext/gettext-0.18.2.tar.gz'
-  mirror 'http://ftp.gnu.org/gnu/gettext/gettext-0.18.2.tar.gz'
-  sha256 '516a6370b3b3f46e2fc5a5e222ff5ecd76f3089bc956a7587a6e4f89de17714c'
-
-  keg_only "OS X provides the BSD gettext library and some software gets confused if both are in the library path."
+  homepage "https://www.gnu.org/software/gettext/"
+  url "http://ftpmirror.gnu.org/gettext/gettext-0.19.2.tar.xz"
+  mirror "https://ftp.gnu.org/gnu/gettext/gettext-0.19.2.tar.xz"
+  sha256 "b34e1baaf37e56b4f5d7104353a437a735b2e094a70588e7c5ae671eaa0819c3"
 
   bottle do
-   sha1 'f5347eea2def6a8649075fe2ca306ce5fa2a5338' => :mountain_lion
-   sha1 '003ba77411550fd471b599c2694bba36d343e98f' => :lion
-   sha1 '976ec00f7046b639b8a687b3316a575031859114' => :snow_leopard
+    sha1 "d2a84c4dc0bcc7984e8a6232bff11780f21d16d3" => :mavericks
+    sha1 "ca0f41730c2769d906d83e88d0aa4506350691fb" => :mountain_lion
+    sha1 "0cf03a50241ea2383e8140cf974c5b0b5533f7b2" => :lion
   end
+
+  keg_only :shadowed_by_osx, "OS X provides the BSD gettext library and some software gets confused if both are in the library path."
 
   option :universal
-  option 'with-examples', 'Keep example files'
-
-  def patches
-    unless build.include? 'with-examples'
-      # Use a MacPorts patch to disable building examples at all,
-      # rather than build them and remove them afterwards.
-      {:p0 => ['https://trac.macports.org/export/102008/trunk/dports/devel/gettext/files/patch-gettext-tools-Makefile.in']}
-    end
-  end
 
   def install
     ENV.libxml2
@@ -36,7 +27,9 @@ class Gettext < Formula
                           "--with-included-glib",
                           "--with-included-libcroco",
                           "--with-included-libunistring",
-                          "--without-emacs",
+                          "--with-emacs",
+                          "--disable-java",
+                          "--disable-csharp",
                           # Don't use VCS systems to create these archives
                           "--without-git",
                           "--without-cvs"

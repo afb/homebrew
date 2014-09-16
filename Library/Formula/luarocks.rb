@@ -2,16 +2,32 @@ require 'formula'
 
 class Luarocks < Formula
   homepage 'http://luarocks.org'
-  url 'http://luarocks.org/releases/luarocks-2.0.12.tar.gz'
-  sha1 'bfa36d5a9931c240c0253dee09c0cfb69372d276'
+  revision 1
+
+  stable do
+    url 'http://luarocks.org/releases/luarocks-2.1.2.tar.gz'
+    sha1 '406253d15c9d50bb0d09efa9807fb2ddd31cba9d'
+
+    # Remove writability checks in the install script.
+    # Homebrew checks that its install targets are writable, or fails with
+    # appropriate messaging if not. The check that luarocks does has been
+    # seen to have false positives, so remove it.
+    # TODO: better document the false positive cases, or remove this patch.
+    patch :DATA
+  end
+
+  head 'https://github.com/keplerproject/luarocks.git'
 
   option 'with-luajit', 'Use LuaJIT instead of the stock Lua'
-  option 'with-lua52', 'Use Lua 5.2 instead of the stock Lua'
+  option 'with-lua51', 'Use Lua 5.1 instead of the stock Lua'
 
-  if build.include? 'with-luajit'
+  if build.with? "luajit"
     depends_on 'luajit'
-  elsif build.include? 'with-lua52'
-    depends_on 'lua52'
+    # luajit depends internally on lua being installed
+    # and is only 5.1 compatible, see #25954
+    depends_on 'lua51'
+  elsif build.with? "lua51"
+    depends_on 'lua51'
   else
     depends_on 'lua'
   end
@@ -20,20 +36,18 @@ class Luarocks < Formula
     cause "Lua itself compiles with llvm, but may fail when other software tries to link."
   end
 
-  # See comments at __END__
-  def patches
-    DATA if HOMEBREW_PREFIX.to_s == '/usr/local'
-  end
-
   def install
     # Install to the Cellar, but direct modules to HOMEBREW_PREFIX
     args = ["--prefix=#{prefix}",
             "--rocks-tree=#{HOMEBREW_PREFIX}",
             "--sysconfdir=#{etc}/luarocks"]
 
-    if build.include? 'with-luajit'
-      args << "--with-lua-include=#{HOMEBREW_PREFIX}/include/luajit-2.0"
+    if build.with? "luajit"
+      luajit_prefix = Formula["luajit"].opt_prefix
+
+      args << "--with-lua-include=#{luajit_prefix}/include/luajit-2.0"
       args << "--lua-suffix=jit"
+      args << "--with-lua=#{luajit_prefix}"
     end
 
     system "./configure", *args
@@ -49,19 +63,13 @@ class Luarocks < Formula
     EOS
   end
 
-  def test
+  test do
     opoo "Luarocks test script installs 'lpeg'"
     system "#{bin}/luarocks", "install", "lpeg"
     system "lua", "-llpeg", "-e", 'print ("Hello World!")'
   end
 end
 
-
-# This patch because we set the permissions of /usr/local to root owned
-# not user writable to be "good" citizens of /usr/local. Actually LUA is being
-# pedantic since all the directories it wants under /usr/local are writable
-# so we just return true. Naughty, but I don't know LUA and don't want to
-# write a better patch.
 __END__
 diff --git a/src/luarocks/fs/lua.lua b/src/luarocks/fs/lua.lua
 index 67c3ce0..2d149c7 100644
