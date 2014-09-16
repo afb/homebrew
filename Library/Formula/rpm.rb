@@ -61,8 +61,11 @@ class Rpm < Formula
       %prep
       %build
       %install
+      mkdir -p $RPM_BUILD_ROOT/tmp
+      touch $RPM_BUILD_ROOT/tmp/test
 
       %files
+      /tmp/test
 
       %changelog
 
@@ -75,6 +78,9 @@ class Rpm < Formula
     specfile.unlink if specfile.exist?
     (specfile).write(spec)
     system "#{bin}/rpmbuild", "-ba", specfile
+    srpmfile = Pathname.new(File.expand_path('~/rpmbuild/SRPMS/test-1.0-1.src.rpm'))
+    rpmfile = Pathname.new(File.expand_path('~/rpmbuild/RPMS/noarch/test-1.0-1.noarch.rpm'))
+    system "#{bin}/rpm", "-qpilv", srpmfile, rpmfile
   end
 end
 
