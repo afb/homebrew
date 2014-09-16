@@ -5,16 +5,17 @@ class Rpm < Formula
   url 'http://rpm.org/releases/rpm-4.11.x/rpm-4.11.3.tar.bz2'
   sha1 'ae9ff06718e877d897ed47e3795b0e56727d752c'
 
-  depends_on 'pkg-config' => :build
-  depends_on 'nss'
-  depends_on 'nspr'
+  depends_on 'berkeley-db'
   depends_on 'libmagic'
   depends_on 'popt'
+  depends_on 'nss'
+  depends_on 'nspr'
   depends_on 'lua'
-  depends_on 'berkeley-db'
   depends_on 'xz'
+  depends_on 'pkg-config' => :build
 
   # setprogname conflicts with setprogname(3)
+  # fdatasync system call missing, use fsync
   def patches
     DATA
   end
@@ -27,10 +28,10 @@ class Rpm < Formula
     ENV['LUA_CFLAGS'] = "-I#{HOMEBREW_PREFIX}/include"
     ENV['LUA_LIBS'] = "-L#{HOMEBREW_PREFIX}/lib -llua"
     args = %W[
-      --disable-dependency-tracking
       --prefix=#{prefix}
-      --sysconfdir=#{HOMEBREW_PREFIX}/etc
-      --localstatedir=#{HOMEBREW_PREFIX}/var
+      --localstatedir=#{var}
+      --sysconfdir=#{etc}
+      --disable-dependency-tracking
       --with-external-db
       --with-lua
       --without-hackingdocs
