@@ -64,6 +64,7 @@ class Rpm < Formula
     inreplace "Makefile", "--tag=CC", "--tag=CXX"
     inreplace "Makefile", "--mode=link $(CCLD)", "--mode=link $(CXX)"
     system "make"
+    inreplace "macros/macros.rpmbuild", "%_use_internal_dependency_generator\t2", "%_use_internal_dependency_generator\t1"
     system "make install"
   end
 end
