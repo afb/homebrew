@@ -17,6 +17,12 @@ class Bash < Formula
       url "https://gist.githubusercontent.com/jacknagel/c1cf23775c774e2b4b6d/raw/c2b0a715efbc8a302741e6b682605940042fc2b8/bash-4.3.30.diff"
       sha1 "61996c0a78d2d07184576783a56a7b315eb16d55"
     end
+
+    # Patch for --rpm-requires, as used by rpmbuild's %{__scriptlet_requires}
+    patch do
+      url "http://pkgs.fedoraproject.org/cgit/bash.git/commit/bash-requires.patch?id=ac881ba83f94a4b96aadb41ac38a50f7e331b178"
+      sha1 "cdfadf03354eb95783f6cafbd0793158947ede5d"
+    end
   end
 
   bottle do
@@ -50,5 +56,6 @@ class Bash < Formula
 
   test do
     assert_equal "hello", shell_output("#{bin}/bash -c \"echo hello\"").strip
+    assert_equal "executable(cp)", shell_output("#{bin}/bash --rpm-requires -c \"cp foo bar\"").strip
   end
 end
