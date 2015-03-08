@@ -33,6 +33,7 @@ class Rpm < Formula
   depends_on 'rpm2cpio' => :build
 
   def install
+    inreplace "macros/macros.in", '@prefix@', HOMEBREW_PREFIX
     args = %W[
         --prefix=#{prefix}
         --localstatedir=#{var}
