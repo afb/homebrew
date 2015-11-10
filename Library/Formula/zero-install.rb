@@ -1,8 +1,8 @@
 class ZeroInstall < Formula
   desc "Zero Install is a decentralised software installation system"
   homepage "http://0install.net/"
-  url "https://downloads.sf.net/project/zero-install/0install/2.8/0install-2.8.tar.bz2"
-  sha256 "12de771be748bce9350c90bc4720029a566b078ceabd335af09386ac6a37df2b"
+  url "https://downloads.sf.net/project/zero-install/0install/2.10/0install-2.10.tar.bz2"
+  sha256 "44ea5789f5b3b1ce621a4ac446dcb418497266c766d70068c2c723159f0112aa"
 
   bottle do
     cellar :any
@@ -17,7 +17,7 @@ class ZeroInstall < Formula
   depends_on "gtk+" => :optional
   depends_on :gpg
 
-  # 0install.2.8 resources from https://github.com/ocaml/opam-repository.git
+  # 0install.2.10 resources from https://github.com/ocaml/opam-repository.git
 
   resource "easy-format" do # [required by yojson]
     url "https://opam.ocaml.org/archives/easy-format.1.0.2+opam.tar.gz"
@@ -32,15 +32,15 @@ class ZeroInstall < Formula
   end
 
   resource "cppo" do # [required by yojson]
-    url "https://opam.ocaml.org/archives/cppo.1.1.2+opam.tar.gz"
-    version "1.1.2"
-    sha256 "35c1caddb249293c5a24f095e0dea85c670056083e30010078124b65e557a2d8"
+    url "https://opam.ocaml.org/archives/cppo.1.3.1+opam.tar.gz"
+    version "1.3.1"
+    sha256 "d4bcbbedab486a187b34976d85af949a9c2d15c3585dff907f5ce3a3c357fefd"
   end
 
   resource "yojson" do
-    url "https://opam.ocaml.org/archives/yojson.1.1.8+opam.tar.gz"
-    version "1.1.8"
-    sha256 "20ce2c2f752b49695468b0bf66f17cf20219d7bca5a0b71a3fb89af500fb52f1"
+    url "https://opam.ocaml.org/archives/yojson.1.2.3+opam.tar.gz"
+    version "1.2.3"
+    sha256 "031a4f5c4c42fd6a454ec6d470ec5d5ab0c119f87b43143e48d921b5a53c24d9"
   end
 
   resource "xmlm" do
@@ -62,27 +62,27 @@ class ZeroInstall < Formula
   end
 
   resource "ppx_tools" do # [required by lwt]
-    url "https://opam.ocaml.org/archives/ppx_tools.0.99.2+opam.tar.gz"
-    version "0.99.2"
-    sha256 "0c5b9802de2005b55717ac78bffcead1ee11dd28f91fb32f7e3518a7d7d8c48a"
+    url "https://opam.ocaml.org/archives/ppx_tools.0.99.3+opam.tar.gz"
+    version "0.99.3"
+    sha256 "cfbd806cedf756029e61c1b3e622da956704d7107b4dd0a031cfc54ea9e3f84c"
   end
 
   resource "lwt" do
-    url "https://opam.ocaml.org/archives/lwt.2.4.6+opam.tar.gz"
-    version "2.4.6"
-    sha256 "297eda984412d6cd231bea548da4ef2d8b08db5f1a0bc295d47ac993243005b5"
+    url "https://opam.ocaml.org/archives/lwt.2.5.0+opam.tar.gz"
+    version "2.5.0"
+    sha256 "cb0500a3c2d2eac236748c14aaff6bba4f2c038cd0ff4dadacb53119ccc95b55"
   end
 
   resource "extlib" do
-    url "https://opam.ocaml.org/archives/extlib.1.6.1+opam.tar.gz"
-    version "1.6.1"
-    sha256 "c76176916c39d4ccae82a34c33e694652c0c55d79eec8830dfddadb580b53773"
+    url "https://opam.ocaml.org/archives/extlib.1.7.0+opam.tar.gz"
+    version "1.7.0"
+    sha256 "275bf2b27f5e7c20e8ee2cda4286c70a5acd3af2b8ec487fb9ab5e523c99eda5"
   end
 
   resource "ocurl" do
-    url "https://opam.ocaml.org/archives/ocurl.0.7.2+opam.tar.gz"
-    version "0.7.2"
-    sha256 "669c5142b7f4002521468b75ee254b269f0094c9a22d3381e94a440a6aa2d400"
+    url "https://opam.ocaml.org/archives/ocurl.0.7.5+opam.tar.gz"
+    version "0.7.5"
+    sha256 "531265e38d67c4eeb2272ccb00a3e2eff951046b809ca61a25c11e874ef9504c"
   end
 
   if build.with? "gtk+"
